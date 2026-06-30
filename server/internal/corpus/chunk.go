@@ -122,12 +122,14 @@ type Chunk struct {
 	Authority   Authority `json:"authority"`    // who enforces this provision
 	Statute     string    `json:"statute"`      // "Road Transport Act 1987"
 	StatuteAbbr string    `json:"statute_abbr"` // "RTA 1987" — for compact display
+	ActNumber   string    `json:"act_number"`   // "333" — the official Act No. (string: amendments are "A1234")
 	State       State     `json:"state"`        // ALL for federal; specific otherwise
 	Section     string    `json:"section"`      // "45A" — the number a citizen reads aloud
 	Heading     string    `json:"heading"`      // marginal note / section heading
 	Lang        Lang      `json:"lang"`         // language of Text (BM is authoritative)
 	Text        string    `json:"text"`         // VERBATIM statute text. Never generated.
 	SourceURL   string    `json:"source_url"`   // official source to point at / read from
+	AsAt        string    `json:"as_at"`        // ISO date (YYYY-MM-DD) the text was current — for staleness detection
 	Verified    bool      `json:"verified"`     // human-confirmed word-for-word?
 }
 
