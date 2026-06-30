@@ -158,6 +158,10 @@ func (c Chunk) Validate() error {
 		return errMissing("source_url")
 	case c.Text == "":
 		return errMissing("text")
+	case c.Verified && c.AsAt == "":
+		// A chunk can't be sworn word-for-word true without saying *as of when*.
+		// Pending chunks may omit as_at; verified ones may not.
+		return errMissing("as_at (required when verified)")
 	}
 	return nil
 }

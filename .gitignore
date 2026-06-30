@@ -1,0 +1,8 @@
+# Raw source documents (statute PDFs) — large binaries, re-downloadable from
+# the AGC portal. Kept OUT of git to avoid bloat at 884-act scale.
+# The derived, text-only corpus/chunks/*.jsonl IS tracked — that's the artifact
+# the app actually reads, and it diffs cleanly.
+corpus/raw/
+
+# macOS
+.DS_Store
