@@ -99,9 +99,10 @@ func (l Lang) Valid() bool {
 	}
 }
 
-// DefaultAnswerLang is what we serve when the user hasn't chosen. Malay-first
-// users facing a government setting are exactly who this app is for.
-const DefaultAnswerLang = BM
+// DefaultAnswerLang is what we serve when the user hasn't chosen. English-first
+// during the build (we optimize for accuracy, not language coverage); flips back
+// to BM at the gov-sale milestone. See CLAUDE.md "Language & localization".
+const DefaultAnswerLang = EN
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Chunk — one retrievable unit of law: a section (or a slice of one) with the

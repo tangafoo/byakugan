@@ -12,7 +12,10 @@ services:
       POSTGRES_PASSWORD: byakugan
       POSTGRES_DB: byakugan
     ports:
-      - "5432:5432" # host:container — reach it at localhost:5432
+      # host:container. Host port is 5433 (not 5432) to dodge the Supabase
+      # containers already squatting on 5432. The DB still speaks 5432 *inside*
+      # the container; we just reach it from the host at localhost:5433.
+      - "5433:5432"
     volumes:
       - byakugan_pgdata:/var/lib/postgresql/data
     healthcheck:

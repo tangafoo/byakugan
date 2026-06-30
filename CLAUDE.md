@@ -252,20 +252,31 @@ button can't precompute.
 - Precompute everything that's identical for all users (every scenario card);
   only the genuinely novel question touches the API. (shikamaru's cost rule.)
 
-## Language & localization (Malay is not optional)
+## Language & localization (English-first to build; Malay is the gov-sale unlock)
 
-This is Malaysia — **Bahasa Malaysia is first-class, not a translation
-afterthought.**
+**Build-phase stance (NOW): English-first.** During the build we optimize for
+*legal accuracy*, not language coverage. The framing, the evals, the default
+answer language, and the dev focus are all English. Reason: where an act has an
+**official AGC English version** (e.g. RTA 1987), that text is accurate enough to
+ground on, so English buys us correctness without the cost of getting legal Malay
+*framing* right. Malay-first UX and nuanced Malay framing are deferred to the
+**gov-sale milestone** (selling to a Malaysian government buyer is when Malay
+stops being optional).
 
-- **The corpus is likely authoritative in Malay.** Malaysian statutes are enacted
-  in BM; English versions are secondary. So the **verbatim quote shows the
-  authoritative language (usually BM)**, ideally with an English rendering
-  alongside — but the text you'd read to an officer is the one that legally holds.
-- **Two outputs, both first-class: clear Malay and clear English.** Malay for the
-  people who need this most (Malay-first users facing a government/legal setting);
-  English because **legal Malay is unreadable even to English-literate
-  Malaysians** — so "dense legal BM → plain English" is *itself* a core feature,
-  not a convenience. Every answer available in both; user picks, app remembers.
+**What we still keep bilingual now, because it's free:** the **verbatim quote**.
+The quote is *retrieval, not generation* — storing the official BM text next to
+the EN costs one `pdftotext`, and the BM is the legally-authoritative wording
+(the text you'd actually read to an officer). So the corpus stays bilingual where
+both official versions exist; we just don't spend effort on Malay *framing* yet.
+
+**Caveat:** not every act has an official English version — some are BM-only. For
+those, English-first means we either defer the act or accept a BM-only quote with
+English framing. Don't machine-translate a statute into a "verbatim" quote — that
+breaks the hard rule.
+
+*(Original Malay-first vision, deferred — restore at the gov-sale milestone:*
+*Malay for the people who need this most; "dense legal BM → plain English" as a*
+*core feature; every answer in both, user picks, app remembers.)*
 - **Retrieval must be multilingual.** Use an embedding model that genuinely
   handles BM (and mixed BM/English queries), or retrieval silently fails on the
   language the corpus is actually written in.

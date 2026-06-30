@@ -6,3 +6,5 @@ corpus/raw/
 
 # macOS
 .DS_Store
+
+server/.env

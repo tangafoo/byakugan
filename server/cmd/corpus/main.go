@@ -7,13 +7,26 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"text/tabwriter"
 
 	"byakugan/internal/corpus"
+	"byakugan/internal/store"
 )
+
+// dsn is the database connection string. Env override first (so prod/Railway can
+// inject its own), local docker default otherwise. Note port 5433 — we remapped
+// off 5432 to dodge the Supabase containers. A DSN packs host, port, user, pass,
+// and db into one URL: postgres://user:pass@host:port/dbname.
+func dsn() string {
+	if v := os.Getenv("DATABASE_URL"); v != "" {
+		return v
+	}
+	return "postgres://byakugan:byakugan@localhost:5433/byakugan"
+}
 
 func main() {
 	// os.Args[0] is the program name; [1] is the subcommand. Go's stdlib has no
@@ -30,6 +43,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
+	case "migrate":
+		if err := runMigrate(); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
 	default:
 		usage()
 		os.Exit(2)
@@ -37,7 +55,26 @@ func main() {
 }
 
 func usage() {
-	fmt.Fprintln(os.Stderr, "usage: corpus load [--lang ms|en] <file.jsonl>")
+	fmt.Fprintln(os.Stderr, "usage: corpus <load|migrate> ...")
+	fmt.Fprintln(os.Stderr, "  load [--lang ms|en] <file.jsonl>   inspect a corpus file")
+	fmt.Fprintln(os.Stderr, "  migrate                            create the pgvector schema")
+}
+
+// runMigrate opens the DB and applies the schema. context.Background() is the
+// root context — "no deadline, no cancellation"; fine for a one-shot CLI command.
+// A long-lived server would derive per-request contexts from it instead.
+func runMigrate() error {
+	ctx := context.Background()
+	st, err := store.Connect(ctx, dsn())
+	if err != nil {
+		return err
+	}
+	defer st.Close()
+	if err := st.Migrate(ctx); err != nil {
+		return err
+	}
+	fmt.Println("migrated: pgvector enabled, chunks table ready")
+	return nil
 }
 
 // runLoad parses this subcommand's own flags. flag.NewFlagSet gives each
