@@ -8,7 +8,10 @@ import (
 	_ "embed"
 	"fmt"
 
+	"byakugan/internal/corpus"
+
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/pgvector/pgvector-go"
 )
 
 // initSchema is the migration SQL compiled straight into the binary. //go:embed
@@ -54,7 +57,43 @@ func (s *Store) Close() { s.pool.Close() }
 // (DDL like CREATE) — the counterpart to Query, which returns rows.
 func (s *Store) Migrate(ctx context.Context) error {
 	if _, err := s.pool.Exec(ctx, initSchema); err != nil {
-		return fmt.Errorf("migrate: %w", err)
+		return fmt.Errorf("could not migrate new schema: %w", err)
+	}
+	return nil
+}
+
+const upsertChunkSQL = `
+	INSERT INTO chunks
+		(id, authority, statute, statute_abbr, act_number, state, section, heading, lang, text, source_url, as_at, verified, embedding)
+	VALUES
+		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+	ON CONFLICT (id) DO UPDATE SET
+		heading = EXCLUDED.heading,
+		authority = EXCLUDED.authority,
+		state = EXCLUDED.state,
+		source_url = EXCLUDED.source_url,
+		as_at = EXCLUDED.as_at,
+		embedding = EXCLUDED.embedding,
+		text = EXCLUDED.text,
+		verified = EXCLUDED.verified;
+`
+
+func (s *Store) UpsertChunk(ctx context.Context, c corpus.Chunk, embedding []float32) error {
+	if _, err := s.pool.Exec(ctx, upsertChunkSQL, c.ID,
+		string(c.Authority),
+		c.Statute,
+		c.StatuteAbbr,
+		c.ActNumber,
+		string(c.State),
+		c.Section,
+		c.Heading,
+		string(c.Lang),
+		c.Text,
+		c.SourceURL,
+		c.AsAt,
+		c.Verified,
+		pgvector.NewVector(embedding)); err != nil {
+		return fmt.Errorf("error while upserting chunk to DB: %w", err)
 	}
 	return nil
 }

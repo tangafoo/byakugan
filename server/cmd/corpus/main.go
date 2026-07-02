@@ -137,6 +137,35 @@ func runEmbed(args []string) error {
 		return fmt.Errorf("no chunks to embed")
 	}
 	fmt.Printf("Received %d vectors, each of length %d\n", len(vectors), len(vectors[0]))
+
+	st, err := store.Connect(ctx, dsn())
+	if err != nil {
+		return fmt.Errorf("could not create store in runEmbed: %w", err)
+	}
+	defer st.Close()
+
+	var failedChunkUploads []string
+	for i, c := range chunks {
+		if err := st.UpsertChunk(ctx, c, vectors[i]); err != nil {
+			fmt.Fprintf(os.Stderr, "[warn] failed to upsert chunk: %v\n", err)
+			failedChunkUploads = append(failedChunkUploads, fmt.Sprintf("failed to upsert chunk %s: %s", c.ID, c.Heading))
+			continue
+		}
+	}
+
+	if len(failedChunkUploads) == len(chunks) {
+		fmt.Printf("failed to upload any chunks ʘ︵ʘ")
+		os.Exit(1)
+	}
+
+	if len(failedChunkUploads) > 0 {
+		fmt.Printf("embed: done - with %d chunks failed to upload\n", len(failedChunkUploads))
+		for _, msg := range failedChunkUploads {
+			fmt.Printf("[%s]\n", msg)
+		}
+	} else {
+		fmt.Printf("embed: all chunks uploaded successfully (◍•ᴗ•◍)❤\n")
+	}
 	return nil
 }
 
