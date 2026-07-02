@@ -3,19 +3,38 @@
 // print what's inside. Later phases bolt on `embed`, `query`, `eval`.
 //
 // Run it: go run ./cmd/corpus load data/raw/rta1987.sample.jsonl
-//         go run ./cmd/corpus load --lang en data/raw/rta1987.sample.jsonl
+//
+//	go run ./cmd/corpus load --lang en data/raw/rta1987.sample.jsonl
 package main
 
 import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"text/tabwriter"
 
+	"github.com/joho/godotenv"
+
 	"byakugan/internal/corpus"
 	"byakugan/internal/store"
+	"byakugan/internal/voyage"
 )
+
+// loadVoyageKey best-effort loads server/.env, then reads the key from the
+// environment. godotenv.Load looks for a `.env` in the current working dir
+// (run the CLI from server/). We ignore its error on purpose: in prod there's
+// no .env file — the platform sets VOYAGE_API_KEY directly — so a missing file
+// isn't fatal; a missing *key* is.
+func loadVoyageKey() (string, error) {
+	_ = godotenv.Load()
+	key := os.Getenv("VOYAGE_API_KEY")
+	if key == "" {
+		return "", fmt.Errorf("VOYAGE_API_KEY not set")
+	}
+	return key, nil
+}
 
 // dsn is the database connection string. Env override first (so prod/Railway can
 // inject its own), local docker default otherwise. Note port 5433 — we remapped
@@ -33,7 +52,7 @@ func main() {
 	// built-in subcommand router (no cobra here yet — staying dependency-free),
 	// so we dispatch by hand. Honest and tiny.
 	if len(os.Args) < 2 {
-		usage()
+		usage(os.Stderr)
 		os.Exit(2)
 	}
 
@@ -48,16 +67,77 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
+	case "embed":
+		if err := runEmbed(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+	case "--help", "-h", "help":
+		usage(os.Stdout)
+		os.Exit(0)
 	default:
-		usage()
+		usage(os.Stderr)
 		os.Exit(2)
 	}
 }
 
-func usage() {
-	fmt.Fprintln(os.Stderr, "usage: corpus <load|migrate> ...")
-	fmt.Fprintln(os.Stderr, "  load [--lang ms|en] <file.jsonl>   inspect a corpus file")
-	fmt.Fprintln(os.Stderr, "  migrate                            create the pgvector schema")
+func usage(w io.Writer) {
+	fmt.Fprint(w, `
+	byakugan! - (▰˘◡˘▰) made by Gafu
+	
+	how to use:	./cmd/corpus	load | migrate | embed	[filename]
+	
+	load	[--lang ms|en]	[filename.jsonl]	inspect a corpus file
+	migrate						create the pgvector schema
+	embed	[filename.jsonl]			embed a corpus file via Voyage
+	`)
+}
+
+// runEmbed — YOUR turn. See the spec in chat. The pieces you have to work with:
+//   - corpus.LoadFile(path) ([]corpus.Chunk, error)   — load + validate
+//   - loadVoyageKey() (string, error)                 — the key (plumbing done)
+//   - voyage.New(key) *voyage.Client                  — make the client once
+//   - client.Embed(ctx, voyage.Document, texts) ([][]float32, error)
+//
+// Goal for now: print how many vectors came back and the length of the first
+// one. (Saving them to Postgres is the next step, 2c.)
+func runEmbed(args []string) error {
+	ctx := context.Background()
+	fs := flag.NewFlagSet("embed", flag.ExitOnError)
+	if err := fs.Parse(args); err != nil {
+		return err
+	}
+
+	if fs.NArg() != 1 {
+		return fmt.Errorf("needs exactly 1 filename as argument. What do you want to embed ?")
+	}
+
+	chunks, err := corpus.LoadFile(fs.Arg(0))
+	if err != nil {
+		return fmt.Errorf("runEmbed: %w", err)
+	}
+
+	key, err := loadVoyageKey()
+	if err != nil {
+		return fmt.Errorf("runEmbed: %w", err)
+	}
+
+	voyageClient := voyage.New(key)
+	var texts []string
+	for _, c := range chunks {
+		texts = append(texts, c.Text)
+	}
+
+	vectors, err := voyageClient.Embed(ctx, voyage.Document, texts)
+	if err != nil {
+		return fmt.Errorf("runEmbed: %w", err)
+	}
+
+	if len(vectors) == 0 {
+		return fmt.Errorf("no chunks to embed")
+	}
+	fmt.Printf("Received %d vectors, each of length %d\n", len(vectors), len(vectors[0]))
+	return nil
 }
 
 // runMigrate opens the DB and applies the schema. context.Background() is the
