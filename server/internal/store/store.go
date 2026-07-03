@@ -79,7 +79,8 @@ const upsertChunkSQL = `
 `
 
 func (s *Store) UpsertChunk(ctx context.Context, c corpus.Chunk, embedding []float32) error {
-	if _, err := s.pool.Exec(ctx, upsertChunkSQL, c.ID,
+	if _, err := s.pool.Exec(ctx, upsertChunkSQL,
+		c.ID,
 		string(c.Authority),
 		c.Statute,
 		c.StatuteAbbr,
@@ -96,4 +97,42 @@ func (s *Store) UpsertChunk(ctx context.Context, c corpus.Chunk, embedding []flo
 		return fmt.Errorf("error while upserting chunk to DB: %w", err)
 	}
 	return nil
+}
+
+type Hit struct {
+	ID       string
+	Section  string
+	Heading  string
+	Lang     string
+	Text     string
+	Distance float64
+}
+
+const searchSQL = `
+	SELECT id, section, heading, lang, text, embedding <=> $1 AS distance
+	FROM chunks
+	WHERE embedding IS NOT NULL
+	ORDER BY distance
+	LIMIT $2;
+`
+
+func (s *Store) Search(ctx context.Context, queryVec []float32, k int) ([]Hit, error) {
+	rows, err := s.pool.Query(ctx, searchSQL,
+		pgvector.NewVector(queryVec),
+		k)
+	if err != nil {
+		return nil, fmt.Errorf("[search] trouble returning rows from chunks table: %w", err)
+	}
+	defer rows.Close()
+
+	var hits []Hit
+	for rows.Next() {
+		var h Hit
+		if err := rows.Scan(&h.ID, &h.Section, &h.Heading, &h.Lang, &h.Text, &h.Distance); err != nil {
+			return nil, fmt.Errorf("search: scan: %w", err)
+		}
+		hits = append(hits, h)
+	}
+
+	return hits, rows.Err()
 }

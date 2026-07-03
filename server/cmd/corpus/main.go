@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"text/tabwriter"
 
 	"github.com/joho/godotenv"
@@ -72,6 +73,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
+	case "query":
+		if err := runQuery(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
 	case "--help", "-h", "help":
 		usage(os.Stdout)
 		os.Exit(0)
@@ -84,12 +90,14 @@ func main() {
 func usage(w io.Writer) {
 	fmt.Fprint(w, `
 	byakugan! - (▰˘◡˘▰) made by Gafu
-	
+	-------------------------------------------------------------
 	how to use:	./cmd/corpus	load | migrate | embed	[filename]
 	
 	load	[--lang ms|en]	[filename.jsonl]	inspect a corpus file
 	migrate						create the pgvector schema
 	embed	[filename.jsonl]			embed a corpus file via Voyage
+	query	[--limit default 5]	[question]	which law applies to given question
+
 	`)
 }
 
@@ -119,10 +127,11 @@ func runEmbed(args []string) error {
 
 	key, err := loadVoyageKey()
 	if err != nil {
-		return fmt.Errorf("runEmbed: %w", err)
+		return fmt.Errorf("⊙︿⊙ trouble loading voyage key: %w", err)
 	}
 
 	voyageClient := voyage.New(key)
+
 	var texts []string
 	for _, c := range chunks {
 		texts = append(texts, c.Text)
@@ -134,16 +143,17 @@ func runEmbed(args []string) error {
 	}
 
 	if len(vectors) == 0 {
-		return fmt.Errorf("no chunks to embed")
+		return fmt.Errorf("nothing got embedded ʘ︵ʘ")
 	}
 	fmt.Printf("Received %d vectors, each of length %d\n", len(vectors), len(vectors[0]))
 
 	st, err := store.Connect(ctx, dsn())
 	if err != nil {
-		return fmt.Errorf("could not create store in runEmbed: %w", err)
+		return fmt.Errorf("could not connect store/DB in runEmbed: %w", err)
 	}
 	defer st.Close()
 
+	// for error tracking only - hopefully all succeeds !
 	var failedChunkUploads []string
 	for i, c := range chunks {
 		if err := st.UpsertChunk(ctx, c, vectors[i]); err != nil {
@@ -191,7 +201,8 @@ func runMigrate() error {
 // where each verb has different options.
 func runLoad(args []string) error {
 	fs := flag.NewFlagSet("load", flag.ExitOnError)
-	langStr := fs.String("lang", "", "filter to one language: ms|en (empty = all)")
+	langStr := fs.String("lang", "", "filter to one language: ms | en (empty = all)")
+
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -206,7 +217,7 @@ func runLoad(args []string) error {
 	if *langStr != "" {
 		want = corpus.Lang(*langStr)
 		if !want.Valid() {
-			return fmt.Errorf("invalid --lang %q (want ms or en)", *langStr)
+			return fmt.Errorf("invalid --lang %q (please choose either ms or en ಥ‿ಥ)", *langStr)
 		}
 	}
 
@@ -241,5 +252,68 @@ func runLoad(args []string) error {
 
 	fmt.Printf("\n%d chunks shown (%d verified, %d pending verbatim sourcing)\n",
 		shown, verified, shown-verified)
+	return nil
+}
+
+func runQuery(args []string) error {
+	ctx := context.Background()
+	fs := flag.NewFlagSet("query", flag.ExitOnError)
+	limit := fs.Int("limit", 5, "number of results to return")
+
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("[query]: %w", err)
+	}
+
+	if fs.NArg() < 1 {
+		return fmt.Errorf("What question do you want to ask byakugan ? ᕕ( ಠ‿ಠ)ᕗ\nPlease specify a question as an argument")
+	}
+
+	question := strings.Join(fs.Args(), " ")
+
+	key, err := loadVoyageKey()
+	if err != nil {
+		return fmt.Errorf("⊙︿⊙ trouble loading voyage key: %w", err)
+	}
+
+	voyageClient := voyage.New(key)
+	vectors, err := voyageClient.Embed(ctx, voyage.Query, []string{question})
+	if err != nil {
+		return err
+	}
+
+	if len(vectors) == 0 {
+		return fmt.Errorf("nothing got embedded ʘ︵ʘ")
+	}
+
+	st, err := store.Connect(ctx, dsn())
+	if err != nil {
+		return fmt.Errorf("could not connect store/DB in runQuery: %w", err)
+	}
+	defer st.Close()
+
+	results, err := st.Search(ctx, vectors[0], *limit)
+	if err != nil {
+		return fmt.Errorf("[query] %w", err)
+	}
+
+	if len(results) == 0 {
+		return fmt.Errorf("No results for question.")
+	}
+
+	tw := tabwriter.NewWriter(os.Stdout, 0, 3, 3, ' ', tabwriter.AlignRight)
+	fmt.Fprintln(tw, "ID\tSECTION\tHEADING\tLANG\tDISTANCE\tTEXT")
+
+	for _, h := range results {
+		runes := []rune(h.Text)
+		if len(runes) > 80 {
+			runes = runes[:80]
+		}
+
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%.5f\t%s\n", h.ID, h.Section, h.Heading, h.Lang, h.Distance, string(runes))
+	}
+	tw.Flush()
+
+	fmt.Printf("\n%d found. Question was %q?\n", len(results), question)
+
 	return nil
 }

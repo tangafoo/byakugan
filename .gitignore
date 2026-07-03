@@ -8,3 +8,6 @@ corpus/raw/
 .DS_Store
 
 server/.env
+
+# code editor config
+.vscode
