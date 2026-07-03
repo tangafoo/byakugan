@@ -258,7 +258,8 @@ func runLoad(args []string) error {
 func runQuery(args []string) error {
 	ctx := context.Background()
 	fs := flag.NewFlagSet("query", flag.ExitOnError)
-	limit := fs.Int("limit", 5, "number of results to return")
+	limitStr := fs.Int("limit", 5, "number of results to return")
+	langStr := fs.String("lang", "en", "choose language [en | ms] (en is default)")
 
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("[query]: %w", err)
@@ -266,6 +267,16 @@ func runQuery(args []string) error {
 
 	if fs.NArg() < 1 {
 		return fmt.Errorf("What question do you want to ask byakugan ? ᕕ( ಠ‿ಠ)ᕗ\nPlease specify a question as an argument")
+	}
+
+	var want corpus.Lang
+	if *langStr != "" {
+		want = corpus.Lang(*langStr)
+		if !want.Valid() {
+			return fmt.Errorf("invalid --lang %q, sorry! we only support en | ms. For the time being.", *langStr)
+		}
+	} else {
+		want = "en"
 	}
 
 	question := strings.Join(fs.Args(), " ")
@@ -291,16 +302,16 @@ func runQuery(args []string) error {
 	}
 	defer st.Close()
 
-	results, err := st.Search(ctx, vectors[0], *limit)
+	results, err := st.Search(ctx, vectors[0], *limitStr, want)
 	if err != nil {
 		return fmt.Errorf("[query] %w", err)
 	}
 
 	if len(results) == 0 {
-		return fmt.Errorf("No results for question.")
+		return fmt.Errorf("No results for question.\nFlags set ->  LIMIT: %d\tLANG: %q", *limitStr, *langStr)
 	}
 
-	tw := tabwriter.NewWriter(os.Stdout, 0, 3, 3, ' ', tabwriter.AlignRight)
+	tw := tabwriter.NewWriter(os.Stdout, 0, 3, 3, ' ', 0)
 	fmt.Fprintln(tw, "ID\tSECTION\tHEADING\tLANG\tDISTANCE\tTEXT")
 
 	for _, h := range results {

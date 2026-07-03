@@ -112,14 +112,15 @@ const searchSQL = `
 	SELECT id, section, heading, lang, text, embedding <=> $1 AS distance
 	FROM chunks
 	WHERE embedding IS NOT NULL
+		AND lang = $3
 	ORDER BY distance
 	LIMIT $2;
 `
 
-func (s *Store) Search(ctx context.Context, queryVec []float32, k int) ([]Hit, error) {
+func (s *Store) Search(ctx context.Context, queryVec []float32, k int, l corpus.Lang) ([]Hit, error) {
 	rows, err := s.pool.Query(ctx, searchSQL,
 		pgvector.NewVector(queryVec),
-		k)
+		k, l)
 	if err != nil {
 		return nil, fmt.Errorf("[search] trouble returning rows from chunks table: %w", err)
 	}
