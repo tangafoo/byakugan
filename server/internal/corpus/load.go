@@ -9,9 +9,6 @@ import (
 	"strings"
 )
 
-// errMissing / errBad build the validation errors. fmt.Errorf is Go's
-// string-formatted error constructor — think `new Error(\`...\`)` but it returns
-// a value instead of being thrown.
 func errMissing(field string) error { return fmt.Errorf("missing required field %q", field) }
 func errBad(field, val string) error {
 	return fmt.Errorf("invalid %s: %q", field, val)

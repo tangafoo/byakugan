@@ -13,12 +13,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"slices"
 	"strings"
 	"text/tabwriter"
 
 	"github.com/joho/godotenv"
 
 	"byakugan/internal/corpus"
+	"byakugan/internal/eval"
 	"byakugan/internal/store"
 	"byakugan/internal/voyage"
 )
@@ -78,6 +80,11 @@ func main() {
 			fmt.Fprintln(os.Stderr, "error:", err)
 			os.Exit(1)
 		}
+	case "eval":
+		if err := runEval(os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
 	case "--help", "-h", "help":
 		usage(os.Stdout)
 		os.Exit(0)
@@ -97,7 +104,7 @@ func usage(w io.Writer) {
 	migrate						create the pgvector schema
 	embed	[filename.jsonl]			embed a corpus file via Voyage
 	query	[--limit default 5]	[question]	which law applies to given question
-
+	eval	[--k limit default 5]	[filename.eval.jsonl]	check search passes eval gate
 	`)
 }
 
@@ -326,5 +333,101 @@ func runQuery(args []string) error {
 
 	fmt.Printf("\n%d found. Question was %q?\n", len(results), question)
 
+	return nil
+}
+
+func runEval(args []string) error {
+	ctx := context.Background()
+
+	fs := flag.NewFlagSet("eval", flag.ExitOnError)
+	k := fs.Int("k", 5, "top-k to search")
+
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("Parsing error: %w", err)
+	}
+	if fs.NArg() != 1 {
+		return fmt.Errorf("Needs an eval file path")
+	}
+
+	cases, err := eval.LoadFile(fs.Arg(0))
+	if err != nil {
+		return fmt.Errorf("troubling reading file and converting to cases: %w", err)
+	}
+
+	key, err := loadVoyageKey()
+	if err != nil {
+		return fmt.Errorf("could not load voyage API key: %w", err)
+	}
+
+	voyageClient := voyage.New(key)
+
+	var questions []string
+	for _, c := range cases {
+		questions = append(questions, c.Question)
+	}
+
+	vectors, err := voyageClient.Embed(ctx, voyage.Query, questions)
+	if err != nil {
+		return err
+	}
+
+	st, err := store.Connect(ctx, dsn())
+	if err != nil {
+		return fmt.Errorf("could not correct to store/DB: %w", err)
+	}
+	defer st.Close()
+
+	var passedCases int
+
+	for i, tc := range cases {
+		fmt.Println("\n------------")
+		fmt.Printf("CASE [%q]\n", tc.ID)
+		hits, err := st.Search(ctx, vectors[i], *k, tc.Lang)
+		if err != nil {
+			return fmt.Errorf("trouble searching: %w", err)
+		}
+
+		fmt.Printf("%d hits found for question %q\n", len(hits), tc.Question)
+
+		fmt.Printf("LANG: %q\n", tc.Lang)
+		fmt.Println(">>>")
+
+		var passedHits int
+
+		for _, h := range hits {
+			fmt.Fprintf(os.Stdout, "found %s - DISTANCE: [%.4f] ", h.Section, h.Distance)
+
+			if slices.Contains(tc.ExpectSections, h.Section) {
+				fmt.Print("✅ was expected. PASS")
+				passedHits++
+			} else {
+				fmt.Print("❌ not expected. FAIL")
+			}
+
+			fmt.Println()
+		}
+		fmt.Println(">>>")
+
+		switch {
+		case tc.ShouldFind:
+			fmt.Printf("Found %d/%d %v EXPECTED SECTIONS (◍•ᴗ•◍)\n", passedHits, len(tc.ExpectSections), tc.ExpectSections)
+
+			if passedHits == len(tc.ExpectSections) {
+				fmt.Fprintf(os.Stdout, "⭐️ [PASS] expected to find %d, actually found %d.", len(tc.ExpectSections), passedHits)
+				passedCases++
+			} else {
+				fmt.Fprintf(os.Stdout, "[FAIL] Did not find all expected sections")
+			}
+		case !tc.ShouldFind && len(hits) > 0:
+			fmt.Fprintln(os.Stdout, "[FAIL] Did not expect to find any section actually, but search returned some. ಠ_ಠ")
+		case !tc.ShouldFind && passedHits == 0:
+			passedCases++
+			fmt.Fprintln(os.Stdout, "[PASS] did not expect to find any. Truly did not find any.")
+		}
+
+	}
+
+	fmt.Println("============")
+	fmt.Printf("\nSummary: %d/%d passed\n\n", passedCases, len(cases))
 	return nil
 }
