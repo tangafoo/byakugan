@@ -378,6 +378,8 @@ func runEval(args []string) error {
 	defer st.Close()
 
 	var passedCases int
+	var allSearchScores []float32
+	var validCases float32
 
 	for i, tc := range cases {
 		fmt.Println("\n------------")
@@ -392,42 +394,66 @@ func runEval(args []string) error {
 		fmt.Printf("LANG: %q\n", tc.Lang)
 		fmt.Println(">>>")
 
-		var passedHits int
+		var matchedHits int
+		var searchPrecision float32
 
-		for _, h := range hits {
+		for j, h := range hits {
+			position := j + 1
 			fmt.Fprintf(os.Stdout, "found %s - DISTANCE: [%.4f] ", h.Section, h.Distance)
 
 			if slices.Contains(tc.ExpectSections, h.Section) {
 				fmt.Print("✅ was expected. PASS")
-				passedHits++
+				matchedHits++
+
+				searchPrecision += float32(matchedHits) / float32(position)
 			} else {
 				fmt.Print("❌ not expected. FAIL")
 			}
 
+			fmt.Printf(" ✯ RANKED %d", position)
 			fmt.Println()
 		}
+
+		if matchedHits > 0 {
+			searchScore := searchPrecision / float32(len(tc.ExpectSections))
+			allSearchScores = append(allSearchScores, searchScore)
+
+			fmt.Printf("\nSCORE OF RESULTS: %.2f\n\n", searchScore)
+		} else {
+			fmt.Printf("\nNO RESULTS\n\n")
+		}
+
 		fmt.Println(">>>")
 
 		switch {
 		case tc.ShouldFind:
-			fmt.Printf("Found %d/%d %v EXPECTED SECTIONS (◍•ᴗ•◍)\n", passedHits, len(tc.ExpectSections), tc.ExpectSections)
+			validCases++
+			fmt.Printf("Found %d/%d %v EXPECTED SECTIONS (◍•ᴗ•◍)\n", matchedHits, len(tc.ExpectSections), tc.ExpectSections)
 
-			if passedHits == len(tc.ExpectSections) {
-				fmt.Fprintf(os.Stdout, "⭐️ [PASS] expected to find %d, actually found %d.", len(tc.ExpectSections), passedHits)
+			if matchedHits == len(tc.ExpectSections) {
+				fmt.Fprintf(os.Stdout, "⭐️ [PASS] expected to find %d, actually found %d.", len(tc.ExpectSections), matchedHits)
 				passedCases++
 			} else {
 				fmt.Fprintf(os.Stdout, "[FAIL] Did not find all expected sections")
 			}
 		case !tc.ShouldFind && len(hits) > 0:
 			fmt.Fprintln(os.Stdout, "[FAIL] Did not expect to find any section actually, but search returned some. ಠ_ಠ")
-		case !tc.ShouldFind && passedHits == 0:
+		case !tc.ShouldFind && matchedHits == 0:
 			passedCases++
 			fmt.Fprintln(os.Stdout, "[PASS] did not expect to find any. Truly did not find any.")
 		}
-
 	}
+
+	var searchQuality float32
+	for _, score := range allSearchScores {
+		searchQuality += score
+	}
+
+	searchQuality = searchQuality / validCases
 
 	fmt.Println("============")
 	fmt.Printf("\nSummary: %d/%d passed\n\n", passedCases, len(cases))
+	fmt.Printf("ALL SEARCH SCORES: %v\n", allSearchScores)
+	fmt.Printf("Mean Average Precision - A.K.A how well Byakugan is at search ᕙ(◕ل͜◕)ᕗ = %.4f\n", searchQuality)
 	return nil
 }
