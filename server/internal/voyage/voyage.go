@@ -72,7 +72,7 @@ func (c *Client) Embed(ctx context.Context, inputType VoyageInputType, texts []s
 		return nil, fmt.Errorf("could not parse JSON into bytes: %w", err)
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, voyageEmbeddingURL, bytes.NewReader(jsonBytes))
