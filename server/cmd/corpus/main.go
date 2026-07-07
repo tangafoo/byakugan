@@ -341,6 +341,7 @@ func runEval(args []string) error {
 
 	fs := flag.NewFlagSet("eval", flag.ExitOnError)
 	k := fs.Int("k", 5, "top-k to search")
+	rerank := fs.Bool("rerank", false, "rerank with voyage before scoring")
 
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("Parsing error: %w", err)
@@ -384,9 +385,34 @@ func runEval(args []string) error {
 	for i, tc := range cases {
 		fmt.Println("\n------------")
 		fmt.Printf("CASE [%q]\n", tc.ID)
-		hits, err := st.Search(ctx, vectors[i], *k, tc.Lang)
+		searchK := *k
+
+		if *rerank {
+			searchK = 20
+		}
+
+		hits, err := st.Search(ctx, vectors[i], searchK, tc.Lang)
 		if err != nil {
 			return fmt.Errorf("trouble searching: %w", err)
+		}
+
+		if *rerank {
+			var hitTexts []string
+			for _, h := range hits {
+				hitTexts = append(hitTexts, h.Text)
+			}
+
+			reranked, err := voyageClient.Rerank(ctx, tc.Question, hitTexts, *k)
+			if err != nil {
+				return fmt.Errorf("Could not run rerank: %w", err)
+			}
+
+			newHitsSlice := make([]store.Hit, 0, len(reranked))
+
+			for _, rr := range reranked {
+				newHitsSlice = append(newHitsSlice, hits[rr.Index])
+			}
+			hits = newHitsSlice
 		}
 
 		fmt.Printf("%d hits found for question %q\n", len(hits), tc.Question)
