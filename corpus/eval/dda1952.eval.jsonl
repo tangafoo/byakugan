@@ -1,0 +1,8 @@
+{"id": "dda-01", "question": "a cop is coming and i have weed.. what do i do ?", "lang": "en", "expect_sections": ["12", "37"], "should_find": true}
+{"id": "dda-02", "question": "how much weed counts as trafficking in malaysia", "lang": "en", "expect_sections": ["37", "39B"], "should_find": true}
+{"id": "dda-03", "question": "can the police arrest me without a warrant for drugs", "lang": "en", "expect_sections": ["31"], "should_find": true}
+{"id": "dda-04", "question": "the weed in the car isnt mine but i was holding the bag, am i in trouble", "lang": "en", "expect_sections": ["37"], "should_find": true}
+{"id": "dda-05", "question": "what is the penalty for smoking weed (not possession, just having smoked it)", "lang": "en", "expect_sections": ["15"], "should_find": true}
+{"id": "dda-06", "question": "police want to take me to the hospital for a blood test after a drug arrest, can they", "lang": "en", "expect_sections": ["31A"], "should_find": true}
+{"id": "dda-07", "question": "can AADK force me to pee in a cup at a spot check", "lang": "en", "expect_sections": [], "should_find": false}
+{"id": "dda-08", "question": "is vaping nicotine illegal in malaysia", "lang": "en", "expect_sections": [], "should_find": false}

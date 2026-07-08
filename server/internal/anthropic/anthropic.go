@@ -20,7 +20,7 @@ func New(apiKey string) *Client {
 	return &Client{api: anthropic.NewClient(option.WithAPIKey(apiKey))}
 }
 
-//go:embed prompts/framing_v1.txt
+//go:embed prompts/framing_v2.txt
 var systemPrompt string
 
 func (c *Client) Frame(ctx context.Context, question string, hits []store.Hit) (string, bool, error) {

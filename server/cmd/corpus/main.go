@@ -425,7 +425,7 @@ func runEval(args []string) error {
 
 		for j, h := range hits {
 			position := j + 1
-			fmt.Fprintf(os.Stdout, "found %s - DISTANCE: [%.4f] ", h.Section, h.Distance)
+			fmt.Fprintf(os.Stdout, "found [s%s-%s] - DISTANCE: [%.4f] ", h.Section, h.Heading, h.Distance)
 
 			if slices.Contains(tc.ExpectSections, h.Section) {
 				fmt.Print("✅ was expected. PASS")

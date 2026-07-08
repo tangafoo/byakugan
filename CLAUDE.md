@@ -37,12 +37,24 @@ Hong Kong / Taiwan street movements, the Nepal and Bangladesh student uprisings 
 and a raw riso / graffiti / punk aesthetic (same hand as the trgf work). Loud
 skin.
 
-But the **content underneath is dead calm and dead straight** — that's the whole
-trick. The radical act here is *accurate knowledge*, not a clenched fist. The
-app's energy is **"know your ground,"** never "fight them." It hands you the law,
-not a confrontation. Fierce on the outside, scrupulously honest and
-de-escalatory on the inside: the militancy lives in *arming people with truth*,
-not in egging anyone into a losing stand. Graffiti aesthetic, lawful substance.
+**byakugan is on the citizen's side — openly.** Not a neutral referee: a
+defense lawyer with riso ink on its hands. Built for rabble-rousers. The stance
+is **we help people get away** — *lawfully*: every exit the law actually
+provides. The condition the officer skipped, the rank he doesn't hold, the six
+hours' notice they never gave, the "on-the-spot settlement" that appears in no
+compounding list, the presumption that can be rebutted and the exact fact that
+rebuts it, the complaint that costs the officer something. The framing energy
+splits roughly **60/40**: six parts fighting for the citizen's ground, four
+parts cold strict law — because the four parts are what make the six land.
+
+What survives untouched: **the facts are never partisan.** The quote is
+verbatim, the grounding is absolute, and when the law is dead against you the
+app says so straight and fast — false hope is the one thing that gets a citizen
+hurt at a stop. That honesty isn't neutrality; it's *tactics*. A defense lawyer
+who lies to their client about the odds is a bad defense lawyer. And the
+get-away stance is what rasengan (see "Surfaces & layering") eventually turns
+into action: don't just tell them the complaint channel exists — have the form
+filled and ready.
 
 ## Hard product rules (non-negotiable)
 
@@ -50,12 +62,15 @@ not in egging anyone into a losing stand. Graffiti aesthetic, lawful substance.
   retrieved **word-for-word** with its section number and source. The LLM
   explains what it means and what you can do; it **never** writes the quote.
   A hallucinated section quoted to an officer makes things worse.
-- **Honest both ways — a mirror, not a cheerleader.** The app shows the law as it
-  actually is, *including* when the authority genuinely has the power to enter,
-  search, or act. It never inflates your rights or tells you what you want to
-  hear. Knowing when they're within their power is as protective as knowing when
-  they're not — it stops you picking a fight you'll lose. Sometimes you have
-  ground; sometimes you don't. The app's job is the truth, not the comfort.
+- **Honest like a defense lawyer, not neutral like a referee.** The app is
+  openly in the citizen's corner — it hunts every lawful exit the sections
+  provide. But it **never inflates a right or invents ground to stand on**:
+  when the authority genuinely has the power to enter, search, or act, it says
+  so straight, because a citizen acting on false hope picks a fight they lose.
+  Honesty is tactical — knowing when they're within their power is as
+  protective as knowing when they're not. Sometimes you have ground; sometimes
+  you don't. The app's job is the truth, delivered by someone unmistakably on
+  your side.
 - **Never dead-end on a "no" — always hand over the next move.** When the answer
   is "yes, they can," that's where the card *continues*, not where it stops. The
   app always leaves you with agency: the limits that still bind them even while
@@ -68,9 +83,11 @@ not in egging anyone into a losing stand. Graffiti aesthetic, lawful substance.
   no signal. See "Offline-first".
 - **Not legal advice.** Persistent, honest disclaimer. The app surfaces *the law
   and its source*; it is an information tool, not a lawyer.
-- **Stays calm and de-escalatory.** Framing is "here is your right / here is the
-  procedure," never "tell the officer they're corrupt." Lower the temperature,
-  don't raise it.
+- **Fire in the voice, ice in the advice.** The voice can burn; the *moves* it
+  recommends keep the encounter cool — "here is your right / here is the
+  procedure / here is the complaint that lands afterward," never "tell the
+  officer he's corrupt to his face." Escalate on paper, de-escalate at the
+  stop. The counterpunch is the complaint form, not the confrontation.
 - **Scope before you answer.** Powers vary by **authority, state, and (for
   religious enforcement) religion**. The app resolves these first and answers
   *for that exact combination* — never a one-size answer across branches or

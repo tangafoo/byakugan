@@ -21,13 +21,14 @@ type Authority string
 const (
 	PDRM      Authority = "PDRM"      // Royal Malaysia Police — general criminal / CPC powers
 	JPJ       Authority = "JPJ"       // Jabatan Pengangkutan Jalan — road transport
-	DBKL      Authority = "DBKL"      // KL City Hall — municipal by-laws, licensing, parking
+	PBT       Authority = "PBT"       // Pihak Berkuasa Tempatan — local authorities as a class (LGA 1976 / SDBA 1974 powers)
+	DBKL      Authority = "DBKL"      // KL City Hall — the FT KL instance of PBT; for KL-specific by-laws
 	Religious Authority = "RELIGIOUS" // state syariah enforcement — state- + religion-scoped
 )
 
 func (a Authority) Valid() bool {
 	switch a {
-	case PDRM, JPJ, DBKL, Religious:
+	case PDRM, JPJ, PBT, DBKL, Religious:
 		return true
 	default:
 		return false
@@ -43,6 +44,12 @@ type State string
 
 const (
 	StateAll State = "ALL" // federal statute — applies in every state
+
+	// Peninsular Malaysia only — several federal acts scope themselves this way
+	// (e.g. Minor Offences Act 1955 s1(2), Local Government Act 1976 s1(1));
+	// Sabah/Sarawak have their own ordinances. Broader than one state, narrower
+	// than ALL.
+	Peninsular State = "PENINSULAR"
 
 	Johor          State = "JHR"
 	Kedah          State = "KDH"
@@ -64,9 +71,9 @@ const (
 
 func (s State) Valid() bool {
 	switch s {
-	case StateAll, Johor, Kedah, Kelantan, Melaka, NegeriSembilan, Pahang,
-		Perak, Perlis, PulauPinang, Sabah, Sarawak, Selangor, Terengganu,
-		KualaLumpur, Labuan, Putrajaya:
+	case StateAll, Peninsular, Johor, Kedah, Kelantan, Melaka, NegeriSembilan,
+		Pahang, Perak, Perlis, PulauPinang, Sabah, Sarawak, Selangor,
+		Terengganu, KualaLumpur, Labuan, Putrajaya:
 		return true
 	default:
 		return false

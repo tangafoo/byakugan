@@ -1,0 +1,9 @@
+{"id": "pbt-01", "question": "a DBKL officer is at my door saying he needs to inspect my house, do I have to let him in right now", "lang": "en", "expect_sections": ["75", "110"], "should_find": true}
+{"id": "pbt-02", "question": "can majlis perbandaran officers arrest me or only the police can", "lang": "en", "expect_sections": ["121"], "should_find": true}
+{"id": "pbt-03", "question": "a council enforcement officer is asking for my name and IC, do I have to give it", "lang": "en", "expect_sections": ["111"], "should_find": true}
+{"id": "pbt-04", "question": "MBSA seized my burger stall from the roadside, can they do that", "lang": "en", "expect_sections": ["46"], "should_find": true}
+{"id": "pbt-05", "question": "what is the maximum fine for breaking a local council by-law", "lang": "en", "expect_sections": ["104"], "should_find": true}
+{"id": "pbt-06", "question": "my motorcycle was parked on the pavement and the council took action, is parking on a footway actually an offence", "lang": "en", "expect_sections": ["46"], "should_find": true}
+{"id": "pbt-07", "question": "the council revoked my hawker licence without telling me why, what are the rules on licences", "lang": "en", "expect_sections": ["107"], "should_find": true}
+{"id": "pbt-08", "question": "how much can DBKL fine me under their anti-litter by-law exactly", "lang": "en", "expect_sections": [], "should_find": false}
+{"id": "pbt-09", "question": "can the majlis daerah in Sabah enter my shop for inspection", "lang": "en", "expect_sections": [], "should_find": false}
