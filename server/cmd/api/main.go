@@ -151,10 +151,20 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 		newHits = append(newHits, results[rr.Index])
 	}
 
+	answer, interrupted, err := s.anthropic.Frame(r.Context(), req.Question, newHits)
+	if err != nil {
+		log.Printf("Claude API error: %v", err)
+		http.Error(w, "byakugan is OK. our LLM ai is not. please try again later. (^._.^)ﾉ", http.StatusServiceUnavailable)
+		return
+	}
+	if interrupted {
+		log.Printf("[claude] answer may be truncated")
+	}
+
 	res := askResponse{
 		Question: req.Question,
 		Lang:     string(req.Lang),
-		Answer:   fmt.Sprintf("found %d hits for your question", len(newHits)),
+		Answer:   fmt.Sprintf("Byakugan's Reply:\n%s", answer),
 	}
 
 	json.NewEncoder(w).Encode(res)

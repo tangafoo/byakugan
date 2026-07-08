@@ -23,7 +23,7 @@ func New(apiKey string) *Client {
 //go:embed prompts/framing_v1.txt
 var systemPrompt string
 
-func (c *Client) Frame(ctx context.Context, question string, hits []store.Hit) (string, error) {
+func (c *Client) Frame(ctx context.Context, question string, hits []store.Hit) (string, bool, error) {
 
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "Question: %s\n\nRetrieved sections:\n", question)
@@ -40,15 +40,16 @@ func (c *Client) Frame(ctx context.Context, question string, hits []store.Hit) (
 			anthropic.NewUserMessage(anthropic.NewTextBlock(userContent)),
 		},
 	})
+	truncated := msg.StopReason != anthropic.StopReasonEndTurn
 	if err != nil {
-		return "", fmt.Errorf("framing failed: %w", err)
+		return "", false, fmt.Errorf("framing failed: %w", err)
 	}
 
 	for _, block := range msg.Content {
 		if t, ok := block.AsAny().(anthropic.TextBlock); ok {
-			return t.Text, nil
+			return t.Text, truncated, nil
 		}
 	}
 
-	return "", fmt.Errorf("no text block in res")
+	return "", false, fmt.Errorf("no text block in res")
 }
