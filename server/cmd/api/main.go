@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 
+	bkanthropic "byakugan/internal/anthropic"
 	"byakugan/internal/corpus"
 	"byakugan/internal/store"
 	"byakugan/internal/voyage"
@@ -28,8 +29,55 @@ type askResponse struct {
 }
 
 type byakuganServer struct {
-	voyage *voyage.Client
-	store  *store.Store
+	voyage    *voyage.Client
+	store     *store.Store
+	anthropic *bkanthropic.Client
+}
+
+func main() {
+	ctx := context.Background()
+	mux := http.NewServeMux()
+	_ = godotenv.Load()
+
+	server := &http.Server{
+		Addr:         ":8080",
+		Handler:      mux,
+		ReadTimeout:  60 * time.Second,
+		WriteTimeout: 240 * time.Second,
+		IdleTimeout:  420 * time.Second,
+	}
+
+	voyageKey := os.Getenv("VOYAGE_API_KEY")
+	if voyageKey == "" {
+		log.Fatal("Voyage API key not set")
+	}
+
+	dbURL := os.Getenv("DATABASE_URL")
+	if dbURL == "" {
+		dbURL = "postgres://byakugan:byakugan@localhost:5433/byakugan"
+	}
+
+	anthropicKey := os.Getenv("ANTHROPIC_API_KEY")
+	if anthropicKey == "" {
+		log.Fatal("Anthropic API key not set")
+	}
+
+	st, err := store.Connect(ctx, dbURL)
+	if err != nil {
+		log.Fatalf("Could not connect to store: %v", err)
+	}
+
+	// Dependency injection
+	srv := &byakuganServer{
+		voyage:    voyage.New(voyageKey),
+		store:     st,
+		anthropic: bkanthropic.New(anthropicKey),
+	}
+
+	mux.HandleFunc("POST /ask", srv.handleAsk)
+
+	fmt.Println("Server is running on http://localhost:8080")
+	log.Fatal(server.ListenAndServe())
 }
 
 func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
@@ -97,6 +145,7 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// reranked hits
 	newHits := make([]store.Hit, 0, len(reranked))
 	for _, rr := range reranked {
 		newHits = append(newHits, results[rr.Index])
@@ -109,44 +158,4 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(res)
-}
-
-func main() {
-	ctx := context.Background()
-	mux := http.NewServeMux()
-	_ = godotenv.Load()
-
-	server := &http.Server{
-		Addr:         ":8080",
-		Handler:      mux,
-		ReadTimeout:  60 * time.Second,
-		WriteTimeout: 240 * time.Second,
-		IdleTimeout:  420 * time.Second,
-	}
-
-	key := os.Getenv("VOYAGE_API_KEY")
-	if key == "" {
-		log.Fatal("Voyage API key not set")
-	}
-
-	dbURL := os.Getenv("DATABASE_URL")
-	if dbURL == "" {
-		dbURL = "postgres://byakugan:byakugan@localhost:5433/byakugan"
-	}
-
-	st, err := store.Connect(ctx, dbURL)
-	if err != nil {
-		log.Fatalf("Could not connect to store: %v", err)
-	}
-
-	// Dependency injection
-	srv := &byakuganServer{
-		voyage: voyage.New(key),
-		store:  st,
-	}
-
-	mux.HandleFunc("POST /ask", srv.handleAsk)
-
-	fmt.Println("Server is running on http://localhost:8080")
-	log.Fatal(server.ListenAndServe())
 }
