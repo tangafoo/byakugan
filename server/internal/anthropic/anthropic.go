@@ -40,10 +40,10 @@ func (c *Client) Frame(ctx context.Context, question string, hits []store.Hit) (
 			anthropic.NewUserMessage(anthropic.NewTextBlock(userContent)),
 		},
 	})
-	truncated := msg.StopReason != anthropic.StopReasonEndTurn
 	if err != nil {
 		return "", false, fmt.Errorf("framing failed: %w", err)
 	}
+	truncated := msg.StopReason != anthropic.StopReasonEndTurn
 
 	for _, block := range msg.Content {
 		if t, ok := block.AsAny().(anthropic.TextBlock); ok {

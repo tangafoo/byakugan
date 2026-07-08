@@ -100,16 +100,17 @@ func (s *Store) UpsertChunk(ctx context.Context, c corpus.Chunk, embedding []flo
 }
 
 type Hit struct {
-	ID       string
-	Section  string
-	Heading  string
-	Lang     string
-	Text     string
-	Distance float64
+	ID        string
+	Section   string
+	Heading   string
+	Lang      string
+	Text      string
+	Distance  float64
+	SourceURL string
 }
 
 const searchSQL = `
-	SELECT id, section, heading, lang, text, embedding <=> $1 AS distance
+	SELECT id, section, heading, lang, text, source_url, embedding <=> $1 AS distance
 	FROM chunks
 	WHERE embedding IS NOT NULL
 		AND lang = $3
@@ -129,7 +130,7 @@ func (s *Store) Search(ctx context.Context, queryVec []float32, k int, l corpus.
 	var hits []Hit
 	for rows.Next() {
 		var h Hit
-		if err := rows.Scan(&h.ID, &h.Section, &h.Heading, &h.Lang, &h.Text, &h.Distance); err != nil {
+		if err := rows.Scan(&h.ID, &h.Section, &h.Heading, &h.Lang, &h.Text, &h.SourceURL, &h.Distance); err != nil {
 			return nil, fmt.Errorf("search: scan: %w", err)
 		}
 		hits = append(hits, h)

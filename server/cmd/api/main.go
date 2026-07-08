@@ -23,9 +23,17 @@ type askRequest struct {
 }
 
 type askResponse struct {
-	Question string `json:"question"`
-	Lang     string `json:"lang"`
-	Answer   string `json:"answer"`
+	Question  string     `json:"question"`
+	Lang      string     `json:"lang"`
+	Answer    string     `json:"answer"`
+	Citations []citation `json:"citations"`
+}
+
+type citation struct {
+	Section   string `json:"section"`
+	Heading   string `json:"heading"`
+	Text      string `json:"text"`
+	SourceURL string `json:"source_url"`
 }
 
 type byakuganServer struct {
@@ -33,6 +41,9 @@ type byakuganServer struct {
 	store     *store.Store
 	anthropic *bkanthropic.Client
 }
+
+const searchK = 20
+const topK = 5
 
 func main() {
 	ctx := context.Background()
@@ -66,6 +77,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not connect to store: %v", err)
 	}
+	defer st.Close()
 
 	// Dependency injection
 	srv := &byakuganServer{
@@ -83,9 +95,6 @@ func main() {
 func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 	var req askRequest
 	w.Header().Set("Content-Type", "application/json")
-
-	searchK := 20
-	topK := 5
 
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		log.Printf("error decoding req: %v", err)
@@ -126,9 +135,10 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 
 	if len(results) == 0 {
 		json.NewEncoder(w).Encode(askResponse{
-			Question: req.Question,
-			Lang:     string(req.Lang),
-			Answer:   "I can't find an answer for that - try rephrasing or adding some citations?",
+			Question:  req.Question,
+			Lang:      string(req.Lang),
+			Answer:    "I can't find an answer for that - please try rephrasing (✖╭╮✖)",
+			Citations: []citation{},
 		})
 		return
 	}
@@ -145,10 +155,19 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var citations []citation
+
 	// reranked hits
 	newHits := make([]store.Hit, 0, len(reranked))
 	for _, rr := range reranked {
 		newHits = append(newHits, results[rr.Index])
+		c := citation{
+			Section:   results[rr.Index].Section,
+			Heading:   results[rr.Index].Heading,
+			Text:      results[rr.Index].Text,
+			SourceURL: results[rr.Index].SourceURL,
+		}
+		citations = append(citations, c)
 	}
 
 	answer, interrupted, err := s.anthropic.Frame(r.Context(), req.Question, newHits)
@@ -162,9 +181,10 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	res := askResponse{
-		Question: req.Question,
-		Lang:     string(req.Lang),
-		Answer:   fmt.Sprintf("Byakugan's Reply:\n%s", answer),
+		Question:  req.Question,
+		Lang:      string(req.Lang),
+		Answer:    answer,
+		Citations: citations,
 	}
 
 	json.NewEncoder(w).Encode(res)
