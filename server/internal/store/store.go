@@ -5,11 +5,15 @@ package store
 
 import (
 	"context"
-	_ "embed"
+	"embed"
+	"encoding/json"
 	"fmt"
+	"io/fs"
+	"path"
 
 	"byakugan/internal/corpus"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/pgvector/pgvector-go"
 )
@@ -20,8 +24,15 @@ import (
 // no clean one; it's like a bundler inlining a file as a string import, but the
 // compiler does it natively.) The path is relative to THIS source file.
 //
-//go:embed migrations/0001_init.sql
-var initSchema string
+
+//go:embed migrations/*.sql
+var migrationFS embed.FS
+
+const migrationsTableSQL = `
+	CREATE TABLE IF NOT EXISTS schema_migrations (
+		version TEXT PRIMARY KEY,	-- filename, e.g. "0002_identity.sql"
+		applied_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);`
 
 // Store wraps a connection POOL, not a single connection. A pool keeps a few
 // live sockets ready and lends one out per query; opening a fresh TCP + auth
@@ -53,15 +64,64 @@ func Connect(ctx context.Context, dsn string) (*Store, error) {
 // Close returns all pooled connections. Call it with `defer st.Close()`.
 func (s *Store) Close() { s.pool.Close() }
 
-// Migrate applies the embedded schema. Exec runs SQL that returns no rows
-// (DDL like CREATE) — the counterpart to Query, which returns rows.
+// Migrate applies the embedded schemas in order. applyMigration runs SQL that returns no
+// rows (DDL like CREATE) — the counterpart to DML, which returns rows. Both
+// files are idempotent (IF NOT EXISTS everywhere), so re-running is safe.
 func (s *Store) Migrate(ctx context.Context) error {
-	if _, err := s.pool.Exec(ctx, initSchema); err != nil {
-		return fmt.Errorf("could not migrate new schema: %w", err)
+	if _, err := s.pool.Exec(ctx, migrationsTableSQL); err != nil {
+		return fmt.Errorf("[migrate] could not set up version table: %w", err)
 	}
+
+	files, err := fs.Glob(migrationFS, "migrations/*.sql")
+	if err != nil {
+		return fmt.Errorf("[migrate] trouble reading /migrations folder: %w", err)
+	}
+
+	for _, fullPath := range files {
+		version := path.Base(fullPath)
+
+		var applied bool
+		if err := s.pool.QueryRow(ctx,
+			`SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = $1);`,
+			version).Scan(&applied); err != nil {
+			return fmt.Errorf("[migrate] DB read error version %s: %w", version, err)
+		}
+		if applied {
+			continue
+		}
+
+		sqlBytes, err := migrationFS.ReadFile(fullPath)
+		if err != nil {
+			return fmt.Errorf("[migrate] error reading file %s: %w", fullPath, err)
+		}
+
+		if err := s.applyMigration(ctx, string(sqlBytes), version); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
+func (s *Store) applyMigration(ctx context.Context, sql, version string) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("[migrate] error at begin: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx, sql); err != nil {
+		return fmt.Errorf("[migrate] could not migrate schema %s: %w", version, err)
+	}
+	if _, err := tx.Exec(ctx, `INSERT INTO schema_migrations (version) VALUES ($1);`, version); err != nil {
+		return fmt.Errorf("[migrate] error adding to version table: %w", err)
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("[migrate] trouble committing: %w", err)
+	}
+
+	return nil
+}
 const upsertChunkSQL = `
 	INSERT INTO chunks
 		(id, authority, statute, statute_abbr, act_number, state, section, heading, lang, text, source_url, as_at, verified, embedding)

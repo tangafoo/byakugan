@@ -126,12 +126,12 @@ const DefaultAnswerLang = EN
 //   2. eval.Case Expect/Forbid — statute-qualified expectations.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type RelatedSections struct {
+type RelatedSection struct {
 	Statute string `json:"statute"` // statute code = StatuteAbbr minus spaces, e.g. "DDA1952"
 	Section string `json:"section"` // "37" — section level, not provision level
 }
 
-func (r RelatedSections) Valid() bool { return r.Statute != "" && r.Section != "" }
+func (r RelatedSection) Valid() bool { return r.Statute != "" && r.Section != "" }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Kind — what a provision *does*, legally. A lawyer never reads a section flat:
@@ -180,33 +180,33 @@ func (k Kind) Valid() bool {
 // ─────────────────────────────────────────────────────────────────────────────
 
 type Chunk struct {
-	ID          string            `json:"id"`                     // stable, e.g. "RTA1987-s45A-0"
-	Authority   Authority         `json:"authority"`              // who enforces this provision
-	Statute     string            `json:"statute"`                // "Road Transport Act 1987"
-	StatuteAbbr string            `json:"statute_abbr"`           // "RTA 1987" — for compact display
-	ActNumber   string            `json:"act_number"`             // "333" — the official Act No. (string: amendments are "A1234")
-	State       State             `json:"state"`                  // ALL for federal; specific otherwise
-	Section     string            `json:"section"`                // "45A" — the number a citizen reads aloud
-	ShortCode   string            `json:"statute_code,omitempty"` // canonical act code when it differs from the abbr-derived one — BM chunks display "APJ 1987" but ARE the same act as "RTA1987"
-	Subsection  string            `json:"subsection,omitempty"`   // "12(2)-(4)" — the span within the section when it's sliced into legal units (covers paragraphs like "37(d)" too)
-	Kind        Kind              `json:"kind,omitempty"`         // what the provision does (offence/power/presumption/...); optional
-	Refs        []RelatedSections `json:"refs,omitempty"`         // statutory cross-references this provision leans on
-	Heading     string            `json:"heading"`                // marginal note / section heading
-	Lang        Lang              `json:"lang"`                   // language of Text (BM is authoritative)
-	Text        string            `json:"text"`                   // VERBATIM statute text. Never generated.
-	SourceURL   string            `json:"source_url"`             // official source to point at / read from
-	AsAt        string            `json:"as_at"`                  // ISO date (YYYY-MM-DD) the text was current — for staleness detection
-	Verified    bool              `json:"verified"`               // human-confirmed word-for-word?
+	ID          string           `json:"id"`                     // stable, e.g. "RTA1987-s45A-0"
+	Authority   Authority        `json:"authority"`              // who enforces this provision
+	Statute     string           `json:"statute"`                // "Road Transport Act 1987"
+	StatuteAbbr string           `json:"statute_abbr"`           // "RTA 1987" — for compact display
+	ActNumber   string           `json:"act_number"`             // "333" — the official Act No. (string: amendments are "A1234")
+	State       State            `json:"state"`                  // ALL for federal; specific otherwise
+	Section     string           `json:"section"`                // "45A" — the number a citizen reads aloud
+	ShortCode   string           `json:"statute_code,omitempty"` // canonical act code when it differs from the abbr-derived one — BM chunks display "APJ 1987" but ARE the same act as "RTA1987"
+	Subsection  string           `json:"subsection,omitempty"`   // "12(2)-(4)" — the span within the section when it's sliced into legal units (covers paragraphs like "37(d)" too)
+	Kind        Kind             `json:"kind,omitempty"`         // what the provision does (offence/power/presumption/...); optional
+	Refs        []RelatedSection `json:"refs,omitempty"`         // statutory cross-references this provision leans on
+	Heading     string           `json:"heading"`                // marginal note / section heading
+	Lang        Lang             `json:"lang"`                   // language of Text (BM is authoritative)
+	Text        string           `json:"text"`                   // VERBATIM statute text. Never generated.
+	SourceURL   string           `json:"source_url"`             // official source to point at / read from
+	AsAt        string           `json:"as_at"`                  // ISO date (YYYY-MM-DD) the text was current — for staleness detection
+	Verified    bool             `json:"verified"`               // human-confirmed word-for-word?
 }
 
-// normalize fills derivable fields so the rest of the pipeline reads them
-// directly. ShortCode is the machine key for a statute — language-independent,
-// since one act is one act whatever language its text is in. Most chunks omit
-// short_code in JSONL and get the abbr minus spaces ("DDA 1952" → "DDA1952");
-// BM chunks set it explicitly because their display abbr is the Malay one
-// ("APJ 1987") but their identity is still "RTA1987" — eval expectations and
-// refs must match across languages. Runs at load, before Validate.
-func (c *Chunk) StatuteCode() string {
+// StatuteCode is the machine key for a statute — language-independent, since
+// one act is one act whatever language its text is in. Most chunks omit
+// short_code in JSONL and derive it here (abbr minus spaces: "DDA 1952" →
+// "DDA1952"); BM chunks set the ShortCode field explicitly because their
+// display abbr is the Malay one ("APJ 1987") but their identity is still
+// "RTA1987" — eval expectations and refs must match across languages.
+// ALWAYS read the code through this getter, never the raw field.
+func (c Chunk) StatuteCode() string {
 	if c.ShortCode != "" {
 		return c.ShortCode
 	}
