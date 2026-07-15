@@ -13,7 +13,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"slices"
 	"strings"
 	"text/tabwriter"
 
@@ -102,7 +101,10 @@ func usage(w io.Writer) {
 	
 	load	[--lang ms|en]	[filename.jsonl]	inspect a corpus file
 	migrate						create the pgvector schema
-	embed	[filename.jsonl]			embed a corpus file via Voyage
+	embed	[--replace]	[filename.jsonl]	embed a corpus file via Voyage
+			--replace: atomically swap each statute+lang in the file
+			(delete old rows, insert new) — REQUIRED after re-slicing
+			sections, else dead slice IDs linger with live embeddings
 	query	[--limit default 5]	[question]	which law applies to given question
 	eval	[--k limit default 5]	[filename.eval.jsonl]	check search passes eval gate
 	`)
@@ -119,6 +121,8 @@ func usage(w io.Writer) {
 func runEmbed(args []string) error {
 	ctx := context.Background()
 	fs := flag.NewFlagSet("embed", flag.ExitOnError)
+	replace := fs.Bool("replace", false, "(delete-then-insert) instead of checking ON CONFLICT - atomically replace each statute + lang in the file ")
+
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -141,7 +145,7 @@ func runEmbed(args []string) error {
 
 	var texts []string
 	for _, c := range chunks {
-		texts = append(texts, c.Text)
+		texts = append(texts, c.EmbedText())
 	}
 
 	vectors, err := voyageClient.Embed(ctx, voyage.Document, texts)
@@ -159,6 +163,39 @@ func runEmbed(args []string) error {
 		return fmt.Errorf("could not connect store/DB in runEmbed: %w", err)
 	}
 	defer st.Close()
+
+	if *replace {
+		// Group by (statute code, lang) — one file can hold two langs
+		// (rta1987.jsonl carries en + ms) and each group swaps atomically.
+		type chunkIdentifier struct {
+			shortCode string
+			lang      corpus.Lang
+		}
+
+		groups := make(map[chunkIdentifier][]int) // group -> indexes into chunks/vectors
+
+		// Using dictionary to make a kinda Set - keep indexes of chunks based on their grouping
+		for i, c := range chunks {
+			g := chunkIdentifier{c.StatuteCode(), c.Lang}
+			groups[g] = append(groups[g], i)
+		}
+
+		for j, idxs := range groups {
+			gc := make([]corpus.Chunk, 0, len(idxs))
+			gv := make([][]float32, 0, len(idxs))
+
+			for _, i := range idxs {
+				gc = append(gc, chunks[i])
+				gv = append(gv, vectors[i])
+			}
+			if err := st.ReplaceStatute(ctx, g.code, g.lang, gc, gv); err != nil {
+				return fmt.Errorf("runEmbed --replace: %w", err)
+			}
+			fmt.Printf("replaced %s/%s: %d chunks\n", g.code, g.lang, len(gc))
+		}
+		fmt.Printf("embed: all statutes replaced successfully (◍•ᴗ•◍)❤\n")
+		return nil
+	}
 
 	// for error tracking only - hopefully all succeeds !
 	var failedChunkUploads []string
