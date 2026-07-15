@@ -122,24 +122,46 @@ func (s *Store) applyMigration(ctx context.Context, sql, version string) error {
 
 	return nil
 }
+
 const upsertChunkSQL = `
 	INSERT INTO chunks
-		(id, authority, statute, statute_abbr, act_number, state, section, heading, lang, text, source_url, as_at, verified, embedding)
+		(id, authority, statute, statute_abbr, act_number, state, section, statute_code, subsection, kind, refs, heading, lang, text, source_url, as_at, verified, embedding)
 	VALUES
-		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
 	ON CONFLICT (id) DO UPDATE SET
-		heading = EXCLUDED.heading,
 		authority = EXCLUDED.authority,
+		statute = EXCLUDED.statute,
+		statute_abbr = EXCLUDED.statute_abbr,
+		act_number = EXCLUDED.act_number,
 		state = EXCLUDED.state,
+		section = EXCLUDED.section,
+		statute_code = EXCLUDED.statute_code,
+		subsection = EXCLUDED.subsection,
+		kind = EXCLUDED.kind,
+		refs = EXCLUDED.refs,
+		heading = EXCLUDED.heading,
+		lang = EXCLUDED.lang,
+		text = EXCLUDED.text,
 		source_url = EXCLUDED.source_url,
 		as_at = EXCLUDED.as_at,
-		embedding = EXCLUDED.embedding,
-		text = EXCLUDED.text,
-		verified = EXCLUDED.verified;
+		verified = EXCLUDED.verified,
+		embedding = EXCLUDED.embedding;
 `
 
 func (s *Store) UpsertChunk(ctx context.Context, c corpus.Chunk, embedding []float32) error {
-	if _, err := s.pool.Exec(ctx, upsertChunkSQL,
+	refs, err := marshalRefs(c.Refs)
+	if err != nil {
+		return fmt.Errorf("[upsert] ID %s: %w", c.ID, err)
+	}
+
+	if _, err := s.pool.Exec(ctx, upsertChunkSQL, upsertArgs(c, refs, embedding)...); err != nil {
+		return fmt.Errorf("error while upserting chunk to DB: %w", err)
+	}
+	return nil
+}
+
+func upsertArgs(c corpus.Chunk, refs []byte, embedding []float32) []any {
+	return []any{
 		c.ID,
 		string(c.Authority),
 		c.Statute,
@@ -147,14 +169,32 @@ func (s *Store) UpsertChunk(ctx context.Context, c corpus.Chunk, embedding []flo
 		c.ActNumber,
 		string(c.State),
 		c.Section,
+		c.StatuteCode(),
+		c.Subsection,
+		string(c.Kind),
+		refs,
 		c.Heading,
 		string(c.Lang),
 		c.Text,
 		c.SourceURL,
 		c.AsAt,
 		c.Verified,
-		pgvector.NewVector(embedding)); err != nil {
-		return fmt.Errorf("error while upserting chunk to DB: %w", err)
+		pgvector.NewVector(embedding),
+	}
+}
+
+// marshalRefs encodes refs for the jsonb column; nil becomes the empty array
+// (the column is NOT NULL DEFAULT '[]').
+func marshalRefs(refs []corpus.RelatedSection) ([]byte, error) {
+	if refs == nil {
+		return []byte("[]"), nil
+	}
+	b, err := json.Marshal(refs)
+	if err != nil {
+		return nil, fmt.Errorf("[marshal] error turning refs into bytes: %w", err)
+	}
+	return b, nil
+}
 	}
 	return nil
 }
