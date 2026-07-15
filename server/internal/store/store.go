@@ -195,28 +195,105 @@ func marshalRefs(refs []corpus.RelatedSection) ([]byte, error) {
 	}
 	return b, nil
 }
+
+// ReplaceStatute/UpdateStatute swaps out one statute's chunks (in one language) atomically:
+// delete everything under (statute_code, lang), reinsert the given chunks, one
+// transaction. This is the re-slice safety net — when a section is re-cut into
+// different slice IDs, plain upserts would leave the dead old IDs in the table
+// with live embeddings, silently polluting retrieval.
+func (s *Store) ReplaceStatute(ctx context.Context, statuteCode string, lang corpus.Lang, chunks []corpus.Chunk, embeddings [][]float32) error {
+	if len(chunks) != len(embeddings) {
+		return fmt.Errorf("replace %s/%s: %d chunks but %d embeddings", statuteCode, lang, len(chunks), len(embeddings))
+	}
+
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("replace %s/%s: [begin]: %w", statuteCode, lang, err)
+	}
+	defer tx.Rollback(ctx)
+
+	if _, err := tx.Exec(ctx,
+		`DELETE FROM chunks WHERE statute_code = $1 AND lang = $2;`,
+		statuteCode, string(lang)); err != nil {
+		return fmt.Errorf("replace %s/%s: delete: %w", statuteCode, lang, err)
+	}
+
+	for i, c := range chunks {
+		refs, err := marshalRefs(c.Refs)
+		if err != nil {
+			return fmt.Errorf("refs to bytes %s/%s: %s: %w", statuteCode, lang, c.ID, err)
+		}
+		if _, err := tx.Exec(ctx, upsertChunkSQL, upsertArgs(c, refs, embeddings[i])...); err != nil {
+			return fmt.Errorf("replace %s/%s: insert %s: %w", statuteCode, lang, c.ID, err)
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return fmt.Errorf("replace %s/%s: commit: %w", statuteCode, lang, err)
 	}
 	return nil
 }
 
+// Different from Chunk because upserting a Chunk
+// fills some nil values with fallbacks.
+// Hits is like a polished ver of Chunk
 type Hit struct {
-	ID        string
-	Section   string
-	Heading   string
-	Lang      string
-	Text      string
-	Distance  float64
-	SourceURL string
+	ID          string
+	Section     string
+	Heading     string
+	Lang        string
+	Text        string
+	SourceURL   string
+	Statute     string // "Dangerous Drugs Act 1952" — for citation display
+	StatuteAbbr string // "DDA 1952"
+	StatuteCode string // "DDA1952" — the matching key (abbr minus spaces)
+	ActNumber   string
+	Authority   string
+	State       string
+	Subsection  string // "12(2)-(4)" when the chunk is a slice; "" otherwise
+	Kind        string
+	Refs        []corpus.RelatedSection
+	Verified    bool
+	Distance    float64
 }
 
+// Same as corpus.Chunk.DisplaySection: the subsection
+// span when sliced, the bare section otherwise.
+func (h Hit) DisplaySection() string {
+	if h.Subsection != "" {
+		return h.Subsection
+	}
+	return h.Section
+}
+
+// refs comes back as jsonb bytes from the DB
+const hitColumns = `id, section, heading, lang, text, source_url, statute, statute_abbr, statute_code, act_number,
+	authority, state, subsection, kind, refs, verified`
+
 const searchSQL = `
-	SELECT id, section, heading, lang, text, source_url, embedding <=> $1 AS distance
+	SELECT ` + hitColumns + `, embedding <=> $1 AS distance
 	FROM chunks
 	WHERE embedding IS NOT NULL
 		AND lang = $3
 	ORDER BY distance
 	LIMIT $2;
 `
+
+func scanHit(rows pgx.Rows) (Hit, error) {
+	var h Hit
+	var refs []byte
+	if err := rows.Scan(&h.ID, &h.Section, &h.Heading, &h.Lang,
+		&h.Text, &h.SourceURL, &h.Statute, &h.StatuteAbbr, &h.StatuteCode,
+		&h.ActNumber, &h.Authority, &h.State, &h.Subsection, &h.Kind, &refs,
+		&h.Verified, &h.Distance); err != nil {
+		return Hit{}, fmt.Errorf("scan: %w", err)
+	}
+	// Unpackage refs from bytes to corpus.RelatedSection
+	if err := json.Unmarshal(refs, &h.Refs); err != nil {
+		return Hit{}, fmt.Errorf("scan refs of %s: %w", h.ID, err)
+	}
+	return h, nil
+}
 
 func (s *Store) Search(ctx context.Context, queryVec []float32, k int, l corpus.Lang) ([]Hit, error) {
 	rows, err := s.pool.Query(ctx, searchSQL,
@@ -229,9 +306,56 @@ func (s *Store) Search(ctx context.Context, queryVec []float32, k int, l corpus.
 
 	var hits []Hit
 	for rows.Next() {
-		var h Hit
-		if err := rows.Scan(&h.ID, &h.Section, &h.Heading, &h.Lang, &h.Text, &h.SourceURL, &h.Distance); err != nil {
-			return nil, fmt.Errorf("search: scan: %w", err)
+		h, err := scanHit(rows)
+		if err != nil {
+			return nil, fmt.Errorf("search: %w", err)
+		}
+		hits = append(hits, h)
+	}
+
+	return hits, rows.Err()
+}
+
+// fetchSectionsSQL resolves a batch of (statute_code, section) pairs in one
+// round trip. The unnest zip turns the two parallel arrays into a rowset —
+// Postgres's way of doing WHERE (a,b) IN (list of tuples) with bind params.
+// Distance is 0: these rows are graph edges (the statute's own cross-
+// references), not similarity matches.
+const fetchSectionsSQL = `
+	SELECT ` + hitColumns + `, 0::float8 AS distance
+	FROM chunks
+	WHERE lang = $3
+		AND (statute_code, section) IN (SELECT unnest($1::text[]), unnest($2::text[]))
+	ORDER BY statute_code, section, id;
+`
+
+// FetchSections returns every chunk (all slices) matching any of the given
+// refs, in the given language. Used for refs expansion: retrieval found via embedding search,
+// refs bring out related sections for more accurate answers.
+func (s *Store) FetchSections(ctx context.Context, refs []corpus.RelatedSection, lang corpus.Lang) ([]Hit, error) {
+	if len(refs) == 0 {
+		return nil, nil
+	}
+
+	codes := make([]string, len(refs))
+	sections := make([]string, len(refs))
+
+	for i, r := range refs {
+		codes[i] = r.Statute
+		sections[i] = r.Section
+	}
+
+	rows, err := s.pool.Query(ctx, fetchSectionsSQL, codes, sections, string(lang))
+	if err != nil {
+		return nil, fmt.Errorf("fetch sections: %w", err)
+	}
+	defer rows.Close()
+
+	var hits []Hit
+	for rows.Next() {
+		h, err := scanHit(rows)
+		if err != nil {
+			return nil, fmt.Errorf("fetch sections: %w", err)
 		}
 		hits = append(hits, h)
 	}
