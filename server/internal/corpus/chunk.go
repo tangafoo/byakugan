@@ -201,7 +201,7 @@ type Chunk struct {
 
 // StatuteCode is the machine key for a statute — language-independent, since
 // one act is one act whatever language its text is in. Most chunks omit
-// short_code in JSONL and derive it here (abbr minus spaces: "DDA 1952" →
+// statute_code in JSONL and derive it here (abbr minus spaces: "DDA 1952" →
 // "DDA1952"); BM chunks set the ShortCode field explicitly because their
 // display abbr is the Malay one ("APJ 1987") but their identity is still
 // "RTA1987" — eval expectations and refs must match across languages.
