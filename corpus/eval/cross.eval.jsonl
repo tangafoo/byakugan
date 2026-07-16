@@ -1,0 +1,24 @@
+// Cross-statute discrimination — the eval file that exists BECAUSE section
+// numbers collide and similar powers live in different acts. Each case expects
+// exactly its own statute's provision and forbids the lookalikes. This is the
+// regression guard for statute-qualified retrieval + the contextualized
+// embeddings: if these fail, retrieval is routing questions to the wrong act.
+//
+// The "arrest" quadruple: four bodies, four arrest powers, four phrasings.
+{"id": "x-arrest-01", "question": "police caught me spraying a wall, can they handcuff me right there for such a small offence", "lang": "en", "expect": [{"statute": "MOA1955", "section": "31"}], "forbid": [{"statute": "DDA1952", "section": "31"}], "should_find": true}
+{"id": "x-arrest-02", "question": "can a majlis officer detain me over an unpaid licence issue or does he have to call the police", "lang": "en", "expect": [{"statute": "LGA1976", "section": "121"}], "forbid": [{"statute": "DDA1952", "section": "31"}], "should_find": true}
+{"id": "x-arrest-03", "question": "the town council guy wants to arrest me for my stall blocking the walkway, is that even allowed", "lang": "en", "expect": [{"statute": "SDBA1974", "section": "46"}], "should_find": true}
+{"id": "x-arrest-04", "question": "if the police suspect me of holding drugs can they grab me without any warrant", "lang": "en", "expect": [{"statute": "DDA1952", "section": "31"}], "forbid": [{"statute": "MOA1955", "section": "31"}], "should_find": true}
+//
+// Possession vs presumption routing: the offence and the burden-shifter are
+// different sections — the presumption slice must surface for "it wasn't mine".
+{"id": "x-drugs-01", "question": "what exactly is the offence of having drugs on you in malaysia", "lang": "en", "expect": [{"statute": "DDA1952", "section": "12"}], "should_find": true}
+{"id": "x-drugs-02", "question": "they found pills in my glovebox but I swear I didnt know, does the law assume its mine", "lang": "en", "expect": [{"statute": "DDA1952", "section": "37"}], "should_find": true}
+//
+// Drunk DRIVING (RTA) vs drunk IN PUBLIC (MOA) — same vice, different acts.
+{"id": "x-drunk-01", "question": "I was driving home after drinks and got pulled over, what offence is that", "lang": "en", "expect": [{"statute": "RTA1987", "section": "45A"}], "forbid": [{"statute": "MOA1955", "section": "21"}], "should_find": true}
+{"id": "x-drunk-02", "question": "my uncle was stumbling drunk outside the kedai and got picked up, he wasnt driving anything", "lang": "en", "expect": [{"statute": "MOA1955", "section": "21"}], "forbid": [{"statute": "RTA1987", "section": "45A"}], "should_find": true}
+//
+// The s15 collision head-on: graffiti s15 (MOA) vs self-administration s15 (DDA).
+{"id": "x-s15-01", "question": "whats the punishment for writing on a public wall with a marker pen", "lang": "en", "expect": [{"statute": "MOA1955", "section": "15"}], "forbid": [{"statute": "DDA1952", "section": "15"}], "should_find": true}
+{"id": "x-s15-02", "question": "someone tested positive for drugs in their system, what section covers just consuming", "lang": "en", "expect": [{"statute": "DDA1952", "section": "15"}], "forbid": [{"statute": "MOA1955", "section": "15"}], "should_find": true}

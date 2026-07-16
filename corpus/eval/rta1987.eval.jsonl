@@ -1,8 +1,11 @@
-{"id": "breath-01", "question": "can the police force me to give a breath sample at a roadblock", "lang": "en", "expect_sections": ["45B"], "should_find": true}
-{"id": "breath-02", "question": "what happens if the police find me drunk at a roadblock", "lang": "en", "expect_sections": ["45A"], "should_find": true}
-{"id": "breath-03", "question": "can the cops make me take a urine test in a roadblock", "lang": "en", "expect_sections": ["45C"], "should_find": true}
-{"id": "breath-04", "question": "I just got stopped by a cop in a bike. What can he ask me to do in the eyes of the law", "lang": "en", "expect_sections": [], "should_find": false}
-{"id": "breath-05", "question": "can I ask the cop at the roadblock for their ID", "lang": "en", "expect_sections": [], "should_find": false}
-{"id": "breath-06", "question": "I only had 1 beer but the cop is saying im over the limit. He made me take a breathalyzer test but refused to show me the result. What can I do", "lang": "en", "expect_sections": ["45A", "45B"], "should_find": true}
-{"id": "breath-07", "question": "Saya hanya minum setin bir tetapi anggota polis mendakwa kadar alkohol saya melebihi had yang dibenarkan. Dia mengarahkan saya menjalani ujian nafas tetapi enggan menunjukkan keputusannya kepada saya. Apakah yang boleh saya lakukan?", "lang": "ms", "expect_sections": ["45A", "45B"], "should_find": true}
-{"id": "breath-08", "question": "I'm a homosexual having a party with all men at my apartment. The cops are banging at my door. Do I have to let them in", "lang": "en", "expect_sections": [], "should_find": false}
+// Object-form expectations (statute-qualified). breath-07 is the Malay case:
+// statute code stays RTA1987 — act identity is language-independent (the BM
+// chunks display "APJ 1987" but carry statute_code RTA1987).
+{"id": "breath-01", "question": "can the police force me to give a breath sample at a roadblock", "lang": "en", "expect": [{"statute": "RTA1987", "section": "45B"}], "should_find": true}
+{"id": "breath-02", "question": "what happens if the police find me drunk at a roadblock", "lang": "en", "expect": [{"statute": "RTA1987", "section": "45A"}], "should_find": true}
+{"id": "breath-03", "question": "can the cops make me take a urine test in a roadblock", "lang": "en", "expect": [{"statute": "RTA1987", "section": "45C"}], "should_find": true}
+{"id": "breath-04", "question": "I just got stopped by a cop in a bike. What can he ask me to do in the eyes of the law", "lang": "en", "expect": [], "should_find": false}
+{"id": "breath-05", "question": "can I ask the cop at the roadblock for their ID", "lang": "en", "expect": [], "should_find": false}
+{"id": "breath-06", "question": "I only had 1 beer but the cop is saying im over the limit. He made me take a breathalyzer test but refused to show me the result. What can I do", "lang": "en", "expect": [{"statute": "RTA1987", "section": "45A"}, {"statute": "RTA1987", "section": "45B"}], "should_find": true}
+{"id": "breath-07", "question": "Saya hanya minum setin bir tetapi anggota polis mendakwa kadar alkohol saya melebihi had yang dibenarkan. Dia mengarahkan saya menjalani ujian nafas tetapi enggan menunjukkan keputusannya kepada saya. Apakah yang boleh saya lakukan?", "lang": "ms", "expect": [{"statute": "RTA1987", "section": "45A"}, {"statute": "RTA1987", "section": "45B"}], "should_find": true}
+{"id": "breath-08", "question": "I'm a homosexual having a party with all men at my apartment. The cops are banging at my door. Do I have to let them in", "lang": "en", "expect": [], "should_find": false}

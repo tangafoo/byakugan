@@ -1,9 +1,12 @@
-{"id": "moa-01", "question": "I got caught spraying graffiti on a wall in KL, what am I actually facing", "lang": "en", "expect_sections": ["15"], "should_find": true}
-{"id": "moa-02", "question": "can the police arrest me on the spot for vandalism or do they need a warrant", "lang": "en", "expect_sections": ["31"], "should_find": true}
-{"id": "moa-03", "question": "the officer says I can settle my graffiti offence by paying him a fine right now", "lang": "en", "expect_sections": ["32"], "should_find": true}
-{"id": "moa-04", "question": "is it illegal to sleep in my car by the roadside if I have nowhere to stay tonight", "lang": "en", "expect_sections": ["28"], "should_find": true}
-{"id": "moa-05", "question": "is begging on the street a crime in Malaysia", "lang": "en", "expect_sections": ["27"], "should_find": true}
-{"id": "moa-06", "question": "my friend was charged for being drunk and rowdy outside a mamak, which law is that", "lang": "en", "expect_sections": ["21"], "should_find": true}
-{"id": "moa-07", "question": "is it against the law to be unemployed in Malaysia", "lang": "en", "expect_sections": [], "should_find": false}
-{"id": "moa-08", "question": "I was caught doing graffiti in Kuching Sarawak what happens to me", "lang": "en", "expect_sections": [], "should_find": false}
-{"id": "moa-09", "question": "someone keeps loitering outside the JPJ office offering to settle my summons for a fee, is that legal", "lang": "en", "expect_sections": ["15A"], "should_find": true}
+// Object-form expectations (statute-qualified). forbid entries are tripwires:
+// moa-01 must never surface the Dangerous Drugs Act's s15 (self-administration)
+// for a graffiti question — the s15 numbers collide across the two acts.
+{"id": "moa-01", "question": "I got caught spraying graffiti on a wall in KL, what am I actually facing", "lang": "en", "expect": [{"statute": "MOA1955", "section": "15"}], "forbid": [{"statute": "DDA1952", "section": "15"}], "should_find": true}
+{"id": "moa-02", "question": "can the police arrest me on the spot for vandalism or do they need a warrant", "lang": "en", "expect": [{"statute": "MOA1955", "section": "31"}], "forbid": [{"statute": "DDA1952", "section": "31"}], "should_find": true}
+{"id": "moa-03", "question": "the officer says I can settle my graffiti offence by paying him a fine right now", "lang": "en", "expect": [{"statute": "MOA1955", "section": "32"}], "should_find": true}
+{"id": "moa-04", "question": "is it illegal to sleep in my car by the roadside if I have nowhere to stay tonight", "lang": "en", "expect": [{"statute": "MOA1955", "section": "28"}], "should_find": true}
+{"id": "moa-05", "question": "is begging on the street a crime in Malaysia", "lang": "en", "expect": [{"statute": "MOA1955", "section": "27"}], "should_find": true}
+{"id": "moa-06", "question": "my friend was charged for being drunk and rowdy outside a mamak, which law is that", "lang": "en", "expect": [{"statute": "MOA1955", "section": "21"}], "should_find": true}
+{"id": "moa-07", "question": "is it against the law to be unemployed in Malaysia", "lang": "en", "expect": [], "should_find": false}
+{"id": "moa-08", "question": "I was caught doing graffiti in Kuching Sarawak what happens to me", "lang": "en", "expect": [], "should_find": false}
+{"id": "moa-09", "question": "someone keeps loitering outside the JPJ office offering to settle my summons for a fee, is that legal", "lang": "en", "expect": [{"statute": "MOA1955", "section": "15A"}], "should_find": true}
