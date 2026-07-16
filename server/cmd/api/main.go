@@ -29,11 +29,34 @@ type askResponse struct {
 	Citations []citation `json:"citations"`
 }
 
+// citation carries the full identity a quote needs to be read to an officer:
+// which act, which section, and — when the chunk is a slice — which subsection.
+// Related marks sections pulled in by the statute's own cross-references
+// (refs expansion) rather than by similarity to the question.
 type citation struct {
-	Section   string `json:"section"`
-	Heading   string `json:"heading"`
-	Text      string `json:"text"`
-	SourceURL string `json:"source_url"`
+	Statute     string `json:"statute"`      // "Dangerous Drugs Act 1952"
+	StatuteAbbr string `json:"statute_abbr"` // "DDA 1952"
+	ActNumber   string `json:"act_number"`   // "234"
+	Section     string `json:"section"`      // "37"
+	Subsection  string `json:"subsection,omitempty"`
+	Heading     string `json:"heading"`
+	Text        string `json:"text"`
+	SourceURL   string `json:"source_url"`
+	Related     bool   `json:"related"`
+}
+
+func hitToCitation(h store.Hit, related bool) citation {
+	return citation{
+		Statute:     h.Statute,
+		StatuteAbbr: h.StatuteAbbr,
+		ActNumber:   h.ActNumber,
+		Section:     h.Section,
+		Subsection:  h.Subsection,
+		Heading:     h.Heading,
+		Text:        h.Text,
+		SourceURL:   h.SourceURL,
+		Related:     related,
+	}
 }
 
 type byakuganServer struct {
@@ -44,6 +67,12 @@ type byakuganServer struct {
 
 const searchK = 20
 const topK = 5
+
+// refsK caps how many related ROWS refs expansion may add to the prompt. The
+// cap is on rows, not refs: one section-level ref (DDA s37) legitimately fans
+// out to several subsection slices, and related sections bypass the reranker
+// (they're graph edges, not similarity matches) — the cap is the bloat guard.
+const refsK = 3
 
 func main() {
 	ctx := context.Background()
@@ -161,16 +190,20 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 	newHits := make([]store.Hit, 0, len(reranked))
 	for _, rr := range reranked {
 		newHits = append(newHits, results[rr.Index])
-		c := citation{
-			Section:   results[rr.Index].Section,
-			Heading:   results[rr.Index].Heading,
-			Text:      results[rr.Index].Text,
-			SourceURL: results[rr.Index].SourceURL,
-		}
-		citations = append(citations, c)
+		citations = append(citations, hitToCitation(results[rr.Index], false))
 	}
 
-	answer, interrupted, err := s.anthropic.Frame(r.Context(), req.Question, newHits)
+	// Refs expansion — follow the statutes' own cross-references one hop.
+	// A lawyer who reads DDA s12 (possession) reads s37 (presumptions) next
+	// because s12's meaning depends on it; embeddings don't know that, the
+	// refs edges do. Fail-soft everywhere: a broken expansion must never
+	// break the answer.
+	related := s.expandRefs(r.Context(), newHits, req.Lang)
+	for _, h := range related {
+		citations = append(citations, hitToCitation(h, true))
+	}
+
+	answer, interrupted, err := s.anthropic.Frame(r.Context(), req.Question, newHits, related)
 	if err != nil {
 		log.Printf("Claude API error: %v", err)
 		http.Error(w, "byakugan is OK. our LLM ai is not. please try again later. (^._.^)ﾉ", http.StatusServiceUnavailable)
@@ -188,4 +221,63 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(res)
+}
+
+// expandRefs collects the cross-references of the retrieved hits and fetches
+// their chunks, capped at refsK rows. Dedupe rules: skip refs pointing at a
+// section already retrieved, and drop fetched rows whose ID is already among
+// the hits (a subsection slice of the same section can be both). Any error is
+// logged and swallowed — expansion is a bonus, never a dependency.
+func (s *byakuganServer) expandRefs(ctx context.Context, hits []store.Hit, lang corpus.Lang) []store.Hit {
+	present := make(map[corpus.RelatedSection]bool, len(hits))
+	presentIDs := make(map[string]bool, len(hits))
+
+	for _, h := range hits {
+		present[corpus.RelatedSection{Statute: h.StatuteCode, Section: h.Section}] = true
+		presentIDs[h.ID] = true
+	}
+
+	var refs []corpus.RelatedSection
+	collected := make(map[corpus.RelatedSection]bool)
+
+	for _, h := range hits { // hits arrive in rerank order — best hit's refs first\
+		for _, r := range h.Refs {
+			if present[r] || collected[r] {
+				continue
+			}
+			collected[r] = true
+
+			refs = append(refs, r)
+			// To account for limit reached in indices not the last
+			if len(refs) == refsK {
+				break
+			}
+		}
+		if len(refs) == refsK {
+			break
+		}
+	}
+
+	if len(refs) == 0 {
+		return nil
+	}
+
+	fetched, err := s.store.FetchSections(ctx, refs, lang)
+	if err != nil {
+		log.Printf("[refs] expansion failed (continuing without): %v", err)
+		return nil
+	}
+
+	var related []store.Hit
+	for _, h := range fetched {
+		if presentIDs[h.ID] {
+			continue
+		}
+		related = append(related, h)
+
+		if len(related) == refsK {
+			break
+		}
+	}
+	return related
 }
