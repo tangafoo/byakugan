@@ -180,7 +180,7 @@ func runEmbed(args []string) error {
 			groups[g] = append(groups[g], i)
 		}
 
-		for j, idxs := range groups {
+		for g, idxs := range groups {
 			gc := make([]corpus.Chunk, 0, len(idxs))
 			gv := make([][]float32, 0, len(idxs))
 
@@ -188,10 +188,12 @@ func runEmbed(args []string) error {
 				gc = append(gc, chunks[i])
 				gv = append(gv, vectors[i])
 			}
-			if err := st.ReplaceStatute(ctx, g.code, g.lang, gc, gv); err != nil {
+
+			if err := st.ReplaceStatute(ctx, g.shortCode, g.lang, gc, gv); err != nil {
 				return fmt.Errorf("runEmbed --replace: %w", err)
 			}
-			fmt.Printf("replaced %s/%s: %d chunks\n", g.code, g.lang, len(gc))
+
+			fmt.Printf("replaced %s/%s: %d chunks\n", g.shortCode, g.lang, len(gc))
 		}
 		fmt.Printf("embed: all statutes replaced successfully (◍•ᴗ•◍)❤\n")
 		return nil
@@ -356,7 +358,7 @@ func runQuery(args []string) error {
 	}
 
 	tw := tabwriter.NewWriter(os.Stdout, 0, 3, 3, ' ', 0)
-	fmt.Fprintln(tw, "ID\tSECTION\tHEADING\tLANG\tDISTANCE\tTEXT")
+	fmt.Fprintln(tw, "ID\tSTATUTE\tSECTION\tHEADING\tLANG\tDISTANCE\tTEXT")
 
 	for _, h := range results {
 		runes := []rune(h.Text)
@@ -364,7 +366,7 @@ func runQuery(args []string) error {
 			runes = runes[:80]
 		}
 
-		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%.5f\t%s\n", h.ID, h.Section, h.Heading, h.Lang, h.Distance, string(runes))
+		fmt.Fprintf(tw, "%s\t%s\t%s\t%s\t%s\t%.5f\t%s\n", h.ID, h.StatuteCode, h.DisplaySection(), h.Heading, h.Lang, h.Distance, string(runes))
 	}
 	tw.Flush()
 
@@ -415,9 +417,11 @@ func runEval(args []string) error {
 	}
 	defer st.Close()
 
-	var passedCases int
+	var passedPositives, positiveCases int
+	var passedNegatives, negativeCases int
+
 	var allSearchScores []float32
-	var validCases float32
+	var forbiddenTripped []string
 
 	for i, tc := range cases {
 		fmt.Println("\n------------")
@@ -452,24 +456,57 @@ func runEval(args []string) error {
 			hits = newHitsSlice
 		}
 
+		// ── threshold plug point ────────────────────────────────────────────
+		// When the distance threshold lands, filter hits HERE (drop rows whose
+		// h.Distance exceeds the cutoff) before any scoring. That is the moment
+		// should_find:false cases become passable — today Search always returns
+		// k rows, so negatives below are reported but unpassable by design.
+		// ────────────────────────────────────────────────────────────────────
+
 		fmt.Printf("%d hits found for question %q\n", len(hits), tc.Question)
 
 		fmt.Printf("LANG: %q\n", tc.Lang)
 		fmt.Println(">>>")
 
-		var matchedHits int
+		// Matching is statute-qualified: the key is (statute_code, section),
+		// never the bare section number — DDA 1952 s31 must not credit an
+		// expectation of MOA 1955 s31. `found` tracks DISTINCT expectations:
+		// a section re-sliced into several chunks counts once, at its best
+		// rank.
+		found := make(map[corpus.RelatedSection]bool, len(tc.Expect))
+		for _, r := range tc.Expect {
+			found[r] = false
+		}
+
+		forbidden := make(map[corpus.RelatedSection]bool, len(tc.Forbid))
+		for _, r := range tc.Forbid {
+			forbidden[r] = true
+		}
+
+		var matched int
+		var forbidHit bool
 		var searchPrecision float32
 
 		for j, h := range hits {
 			position := j + 1
-			fmt.Fprintf(os.Stdout, "found [s%s-%s] - DISTANCE: [%.4f] ", h.Section, h.Heading, h.Distance)
+			key := corpus.RelatedSection{Statute: h.StatuteCode, Section: h.Section}
 
-			if slices.Contains(tc.ExpectSections, h.Section) {
+			fmt.Fprintf(os.Stdout, "found [%s s%s — %s] - DISTANCE: [%.4f] ", h.StatuteCode, h.DisplaySection(), h.Heading, h.Distance)
+
+			seen, isExpected := found[key]
+			switch {
+			case forbidden[key]:
+				forbidHit = true
+				forbiddenTripped = append(forbiddenTripped, fmt.Sprintf("%s: %s s%s at rank %d", tc.ID, h.StatuteCode, h.Section, position))
+				fmt.Print("⛔ FORBIDDEN for this question. FAIL")
+			case isExpected && !seen:
+				found[key] = true
+				matched++
+				searchPrecision += float32(matched) / float32(position)
 				fmt.Print("✅ was expected. PASS")
-				matchedHits++
-
-				searchPrecision += float32(matchedHits) / float32(position)
-			} else {
+			case isExpected:
+				fmt.Print("· expected (already counted — another slice of the same section)")
+			default:
 				fmt.Print("❌ not expected. FAIL")
 			}
 
@@ -477,46 +514,63 @@ func runEval(args []string) error {
 			fmt.Println()
 		}
 
-		if matchedHits > 0 {
-			searchScore := searchPrecision / float32(len(tc.ExpectSections))
+		fmt.Println(">>>")
+
+		if tc.ShouldFind {
+			positiveCases++
+
+			searchScore := searchPrecision / float32(len(tc.Expect))
 			allSearchScores = append(allSearchScores, searchScore)
 
 			fmt.Printf("\nSCORE OF RESULTS: %.2f\n\n", searchScore)
-		} else {
-			fmt.Printf("\nNO RESULTS\n\n")
-		}
+			fmt.Printf("Found %d/%d distinct expected sections %v (◍•ᴗ•◍)\n", matched, len(tc.Expect), tc.Expect)
 
-		fmt.Println(">>>")
-
-		switch {
-		case tc.ShouldFind:
-			validCases++
-			fmt.Printf("Found %d/%d %v EXPECTED SECTIONS (◍•ᴗ•◍)\n", matchedHits, len(tc.ExpectSections), tc.ExpectSections)
-
-			if matchedHits == len(tc.ExpectSections) {
-				fmt.Fprintf(os.Stdout, "⭐️ [PASS] expected to find %d, actually found %d.", len(tc.ExpectSections), matchedHits)
-				passedCases++
-			} else {
+			switch {
+			case matched == len(tc.Expect) && !forbidHit:
+				fmt.Fprintf(os.Stdout, "⭐️ [PASS] found all %d expected sections.", len(tc.Expect))
+				passedPositives++
+			case forbidHit:
+				fmt.Fprintf(os.Stdout, "[FAIL] a forbidden section surfaced — see ⛔ above")
+			default:
 				fmt.Fprintf(os.Stdout, "[FAIL] Did not find all expected sections")
 			}
-		case !tc.ShouldFind && len(hits) > 0:
-			fmt.Fprintln(os.Stdout, "[FAIL] Did not expect to find any section actually, but search returned some. ಠ_ಠ")
-		case !tc.ShouldFind && matchedHits == 0:
-			passedCases++
-			fmt.Fprintln(os.Stdout, "[PASS] did not expect to find any. Truly did not find any.")
+		} else {
+			negativeCases++
+			switch {
+			case len(hits) == 0 && !forbidHit:
+				passedNegatives++
+				fmt.Fprintln(os.Stdout, "[PASS] did not expect to find any. Truly did not find any.")
+			default:
+				fmt.Fprintln(os.Stdout, "[FAIL - negative] expected nothing, search returned hits. ಠ_ಠ")
+			}
 		}
 	}
 
-	var searchQuality float32
-	for _, score := range allSearchScores {
-		searchQuality += score
+	fmt.Println("============")
+	fmt.Printf("\nSummary: %d/%d positive cases passed", passedPositives, positiveCases)
+	if negativeCases > 0 {
+		fmt.Printf(" | %d/%d negative cases passed", passedNegatives, negativeCases)
+	}
+	fmt.Println()
+
+	if len(forbiddenTripped) > 0 {
+		fmt.Println("\n⛔ FORBIDDEN SECTIONS SURFACED:")
+		for _, f := range forbiddenTripped {
+			fmt.Printf("   %s\n", f)
+		}
 	}
 
-	searchQuality = searchQuality / validCases
+	fmt.Printf("\nALL SEARCH SCORES: %v\n", allSearchScores)
 
-	fmt.Println("============")
-	fmt.Printf("\nSummary: %d/%d passed\n\n", passedCases, len(cases))
-	fmt.Printf("ALL SEARCH SCORES: %v\n", allSearchScores)
-	fmt.Printf("Mean Average Precision - A.K.A how well Byakugan is at search ᕙ(◕ل͜◕)ᕗ = %.4f\n", searchQuality)
+	if len(allSearchScores) > 0 {
+		var searchQuality float32
+		for _, score := range allSearchScores {
+			searchQuality += score
+		}
+		searchQuality = searchQuality / float32(len(allSearchScores))
+		fmt.Printf("Mean Average Precision - A.K.A how well Byakugan is at search ᕙ(◕ل͜◕)ᕗ = %.4f\n", searchQuality)
+	} else {
+		fmt.Println("Mean Average Precision: n/a (no positive cases in this file)")
+	}
 	return nil
 }
