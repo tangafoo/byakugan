@@ -69,7 +69,7 @@ const searchK = 20
 const topK = 5
 
 // 20-07-2026
-const maxDist = 0.7050
+const maxDist = 0.7100
 
 // refsK caps how many related ROWS refs expansion may add to the prompt. The
 // cap is on rows, not refs: one section-level ref (DDA s37) legitimately fans
