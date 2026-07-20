@@ -295,7 +295,7 @@ func scanHit(rows pgx.Rows) (Hit, error) {
 	return h, nil
 }
 
-func (s *Store) Search(ctx context.Context, queryVec []float32, k int, l corpus.Lang) ([]Hit, error) {
+func (s *Store) Search(ctx context.Context, queryVec []float32, k int, l corpus.Lang, maxDist float64) ([]Hit, error) {
 	rows, err := s.pool.Query(ctx, searchSQL,
 		pgvector.NewVector(queryVec),
 		k, l)
@@ -313,7 +313,20 @@ func (s *Store) Search(ctx context.Context, queryVec []float32, k int, l corpus.
 		hits = append(hits, h)
 	}
 
-	return hits, rows.Err()
+	if maxDist <= 0 {
+		return hits, rows.Err()
+	}
+
+	// Max distance filtering
+	kept := hits[:0]
+
+	for _, hit := range hits {
+		if hit.Distance <= maxDist {
+			kept = append(kept, hit)
+		}
+	}
+	return kept, rows.Err()
+
 }
 
 // fetchSectionsSQL resolves a batch of (statute_code, section) pairs in one

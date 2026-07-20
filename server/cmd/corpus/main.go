@@ -306,6 +306,7 @@ func runQuery(args []string) error {
 	fs := flag.NewFlagSet("query", flag.ExitOnError)
 	limitStr := fs.Int("limit", 5, "number of results to return")
 	langStr := fs.String("lang", "en", "choose language [en | ms] (en is default)")
+	maxDist := fs.Float64("max-dist", 0, "drop hits above this distance. 0 = off")
 
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("[query]: %w", err)
@@ -348,7 +349,7 @@ func runQuery(args []string) error {
 	}
 	defer st.Close()
 
-	results, err := st.Search(ctx, vectors[0], *limitStr, want)
+	results, err := st.Search(ctx, vectors[0], *limitStr, want, *maxDist)
 	if err != nil {
 		return fmt.Errorf("[query] %w", err)
 	}
@@ -379,8 +380,10 @@ func runEval(args []string) error {
 	ctx := context.Background()
 
 	fs := flag.NewFlagSet("eval", flag.ExitOnError)
+
 	k := fs.Int("k", 5, "top-k to search")
 	rerank := fs.Bool("rerank", false, "rerank with voyage before scoring")
+	maxDist := fs.Float64("max-dist", 0, "drop hits above this distance. 0 = off")
 
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("Parsing error: %w", err)
@@ -432,12 +435,16 @@ func runEval(args []string) error {
 			searchK = 20
 		}
 
-		hits, err := st.Search(ctx, vectors[i], searchK, tc.Lang)
+		hits, err := st.Search(ctx, vectors[i], searchK, tc.Lang, *maxDist)
 		if err != nil {
 			return fmt.Errorf("trouble searching: %w", err)
 		}
 
-		if *rerank {
+		if *maxDist > 0 && len(hits) == 0 {
+			fmt.Println("⚠ max-dist removed all hits — skipping rerank for this case")
+		}
+
+		if *rerank && len(hits) > 0 {
 			var hitTexts []string
 			for _, h := range hits {
 				hitTexts = append(hitTexts, h.Text)
@@ -455,13 +462,6 @@ func runEval(args []string) error {
 			}
 			hits = newHitsSlice
 		}
-
-		// ── threshold plug point ────────────────────────────────────────────
-		// When the distance threshold lands, filter hits HERE (drop rows whose
-		// h.Distance exceeds the cutoff) before any scoring. That is the moment
-		// should_find:false cases become passable — today Search always returns
-		// k rows, so negatives below are reported but unpassable by design.
-		// ────────────────────────────────────────────────────────────────────
 
 		fmt.Printf("%d hits found for question %q\n", len(hits), tc.Question)
 

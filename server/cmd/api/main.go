@@ -68,6 +68,9 @@ type byakuganServer struct {
 const searchK = 20
 const topK = 5
 
+// 20-07-2026
+const maxDist = 0.7050
+
 // refsK caps how many related ROWS refs expansion may add to the prompt. The
 // cap is on rows, not refs: one section-level ref (DDA s37) legitimately fans
 // out to several subsection slices, and related sections bypass the reranker
@@ -155,7 +158,7 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := s.store.Search(r.Context(), vectors[0], searchK, req.Lang)
+	results, err := s.store.Search(r.Context(), vectors[0], searchK, req.Lang, maxDist)
 	if err != nil {
 		log.Printf("trouble searching DB: %v", err)
 		http.Error(w, "byakugan's DB is having a sick day", http.StatusServiceUnavailable)
