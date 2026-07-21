@@ -65,12 +65,6 @@ type byakuganServer struct {
 	anthropic *bkanthropic.Client
 }
 
-const searchK = 20
-const topK = 5
-
-// 20-07-2026
-const maxDist = 0.7100
-
 // refsK caps how many related ROWS refs expansion may add to the prompt. The
 // cap is on rows, not refs: one section-level ref (DDA s37) legitimately fans
 // out to several subsection slices, and related sections bypass the reranker
@@ -158,7 +152,7 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	results, err := s.store.Search(r.Context(), vectors[0], searchK, req.Lang, maxDist)
+	results, err := s.store.Search(r.Context(), vectors[0], store.SearchK, req.Lang, store.MaxDist)
 	if err != nil {
 		log.Printf("trouble searching DB: %v", err)
 		http.Error(w, "byakugan's DB is having a sick day", http.StatusServiceUnavailable)
@@ -180,7 +174,7 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 		resultTexts = append(resultTexts, result.Text)
 	}
 
-	reranked, err := s.voyage.Rerank(r.Context(), req.Question, resultTexts, topK)
+	reranked, err := s.voyage.Rerank(r.Context(), req.Question, resultTexts, store.TopK)
 	if err != nil {
 		log.Printf("Reranker had some trouble: %v", err)
 		http.Error(w, "byakugan's brain had a spasm", http.StatusServiceUnavailable)
