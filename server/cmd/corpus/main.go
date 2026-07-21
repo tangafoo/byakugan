@@ -95,7 +95,7 @@ func main() {
 
 func usage(w io.Writer) {
 	fmt.Fprint(w, `
-	byakugan! - (▰˘◡˘▰) made by Gafu
+	Layman! - (▰˘◡˘▰) made by Gafu
 	-------------------------------------------------------------
 	how to use:	./cmd/corpus	load | migrate | embed	[filename]
 	
@@ -106,7 +106,7 @@ func usage(w io.Writer) {
 			(delete old rows, insert new) — REQUIRED after re-slicing
 			sections, else dead slice IDs linger with live embeddings
 	query	[--limit default 5]	[question]	which law applies to given question
-	eval	[--k limit default 5]	[filename.eval.jsonl]	check search passes eval gate
+	eval	[--k limit default 5]	[filename.eval.jsonl]	[--min-map CI gate default 0]	check search passes eval gate
 	`)
 }
 
@@ -304,9 +304,10 @@ func runLoad(args []string) error {
 func runQuery(args []string) error {
 	ctx := context.Background()
 	fs := flag.NewFlagSet("query", flag.ExitOnError)
-	limitStr := fs.Int("limit", 5, "number of results to return")
+
+	limitStr := fs.Int("limit", store.TopK, "number of results to return")
 	langStr := fs.String("lang", "en", "choose language [en | ms] (en is default)")
-	maxDist := fs.Float64("max-dist", 0, "drop hits above this distance. 0 = off")
+	maxDist := fs.Float64("max-dist", store.MaxDist, "drop hits above this distance. 0 = off")
 
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("[query]: %w", err)
@@ -381,9 +382,10 @@ func runEval(args []string) error {
 
 	fs := flag.NewFlagSet("eval", flag.ExitOnError)
 
-	k := fs.Int("k", 5, "top-k to search")
+	k := fs.Int("k", store.TopK, "top-k to search")
 	rerank := fs.Bool("rerank", false, "rerank with voyage before scoring")
-	maxDist := fs.Float64("max-dist", 0, "drop hits above this distance. 0 = off")
+	maxDist := fs.Float64("max-dist", store.MaxDist, "drop hits above this distance. 0 = off")
+	minMAP := fs.Float64("min-map", 0, "CI gate: minimum Mean Average Precision for eval. 0 = report only")
 
 	if err := fs.Parse(args); err != nil {
 		return fmt.Errorf("Parsing error: %w", err)
@@ -432,7 +434,7 @@ func runEval(args []string) error {
 		searchK := *k
 
 		if *rerank {
-			searchK = 20
+			searchK = store.SearchK
 		}
 
 		hits, err := st.Search(ctx, vectors[i], searchK, tc.Lang, *maxDist)
@@ -562,8 +564,9 @@ func runEval(args []string) error {
 
 	fmt.Printf("\nALL SEARCH SCORES: %v\n", allSearchScores)
 
+	var searchQuality float32
+
 	if len(allSearchScores) > 0 {
-		var searchQuality float32
 		for _, score := range allSearchScores {
 			searchQuality += score
 		}
@@ -572,5 +575,15 @@ func runEval(args []string) error {
 	} else {
 		fmt.Println("Mean Average Precision: n/a (no positive cases in this file)")
 	}
+
+	if *minMAP > 0 {
+		failedCases := (positiveCases - passedPositives) + (negativeCases - passedNegatives)
+		if failedCases > 0 {
+			return fmt.Errorf("eval gate FAILED: found %d failed cases.", failedCases)
+		} else if searchQuality < float32(*minMAP) && len(allSearchScores) > 0 {
+			return fmt.Errorf("eval gate FAILED: MAP: %.2f below required %.2f", searchQuality, *minMAP)
+		}
+	}
+
 	return nil
 }
