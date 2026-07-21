@@ -1,0 +1,13 @@
+// Street fights + animal cruelty — Penal Code clusters B/C. The legal core:
+// affray (s159/160, the fight itself in public), voluntarily causing hurt
+// (s321/323) and grievous hurt (s322/325), assault without touch (s351/352),
+// mischief by killing/poisoning any animal (s428 — s429 was DELETED by A1471,
+// never cite it). fight-04/fight-05 are the intent-line discrimination pair:
+// deliberate hurt (s323) vs negligent hurt (s337) must not cross — that line
+// is what separates this cluster from the negligence ladder.
+{"id": "fight-01", "question": "i got into a drunken fistfight outside the mamak last night, both of us were swinging, what can we be charged with", "lang": "en", "expect": [{"statute": "PC", "section": "160"}, {"statute": "PC", "section": "323"}], "should_find": true}
+{"id": "fight-02", "question": "two gangs were brawling in the street near my flat, is the fighting itself an offence even if nobody reported injuries", "lang": "en", "expect": [{"statute": "PC", "section": "159"}, {"statute": "PC", "section": "160"}], "should_find": true}
+{"id": "fight-03", "question": "a guy raised his fist and lunged at me but never actually touched me, is that already an offence", "lang": "en", "expect": [{"statute": "PC", "section": "351"}, {"statute": "PC", "section": "352"}], "should_find": true}
+{"id": "fight-04", "question": "someone deliberately punched me in the face during an argument and bruised me badly, what is the charge for that", "lang": "en", "expect": [{"statute": "PC", "section": "323"}], "forbid": [{"statute": "PC", "section": "337"}], "should_find": true}
+{"id": "fight-05", "question": "i swung a badminton racquet carelessly and it flew out of my hand and cut a bystander, i never meant to hit anyone, what am i looking at", "lang": "en", "expect": [{"statute": "PC", "section": "337"}], "forbid": [{"statute": "PC", "section": "323"}], "should_find": true}
+{"id": "animal-01", "question": "someone is poisoning the stray cats in my neighbourhood, what law does that break and what is the punishment", "lang": "en", "expect": [{"statute": "PC", "section": "428"}], "should_find": true}

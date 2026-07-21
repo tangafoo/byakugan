@@ -1,0 +1,15 @@
+// Conditional-rights cluster — protections that switch ON because of who the
+// citizen is: woman (CPC s19(2) search-by-woman + decency), minor (Child Act
+// 83A/84/85/96), pregnant (CPC s275, Fourth Schedule), 24h-rule (s117 + s28A),
+// whipping exemptions (s289). cond-05/cond-06 are HONEST-MISS negatives:
+// widely believed protections that do NOT exist in the official text (night
+// arrest of women; menstruation accommodations) — the corpus must return
+// nothing rather than inflate a right. cond-04's expect matches the Fourth
+// Schedule chunks' section field; if the schedule citation convention changes,
+// move this case with it.
+{"id": "cond-01", "question": "I'm a woman, the roadblock only has male officers and they want to body search me", "lang": "en", "expect": [{"statute": "CPC", "section": "19"}], "should_find": true}
+{"id": "cond-02", "question": "my 15 year old son got arrested, do the police have to inform me before questioning him and can they handcuff him", "lang": "en", "expect": [{"statute": "CA2001", "section": "83A"}], "should_find": true}
+{"id": "cond-03", "question": "I've been in the lockup more than 24 hours and nobody has brought me before a magistrate", "lang": "en", "expect": [{"statute": "CPC", "section": "117"}, {"statute": "CPC", "section": "28A"}], "should_find": true}
+{"id": "cond-04", "question": "I'm pregnant and they want me to squat naked during the lockup search", "lang": "en", "expect": [{"statute": "CPC", "section": "Fourth Schedule"}], "should_find": true}
+{"id": "cond-05", "question": "is it true the police cannot arrest a woman at night without a female officer present", "lang": "en", "expect": [], "should_find": false}
+{"id": "cond-06", "question": "I'm on my period, can I refuse the strip search because of that", "lang": "en", "expect": [], "should_find": false}

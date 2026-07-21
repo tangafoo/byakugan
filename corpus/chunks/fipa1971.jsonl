@@ -1,0 +1,53 @@
+// Firearms (Increased Penalties) Act 1971 [Act 37] — the aggravated tier
+// above the Arms Act, taken NARROWLY. Most of FIPA is about firearms used
+// in the commission of scheduled crimes (extortion, robbery, kidnapping,
+// house-breaking, resisting arrest, escape): s3/3A (discharge during a
+// scheduled offence, accomplices included) and s4/s5 (exhibiting/having a
+// firearm during a scheduled offence) — all now 30-40 years + whipping
+// after the Abolition of Mandatory Death Penalty Act 2023 (formerly death/
+// life); s6 (imitation firearm — ≤10 years + whipping).
+// That tier does NOT touch a licensed owner's negligent
+// discharge and is deliberately NOT chunked — out of scope for the
+// know-your-footing scenarios; revisit only if a "armed crime" card ever
+// exists (it shouldn't).
+// WHAT IS CHUNKED — the citizen-relevant edge:
+// s2 (interpretation — "unlawful possession of a firearm" = possession in
+// contravention of the Arms Act 1960; "firearm" here is narrower than the
+// Arms Act "arm": explosive-charge weapons only, so air guns fall outside
+// FIPA), s7(1) (trafficking: 30-40 years + whipping not less than six
+// strokes — NO LONGER capital: the death/life tier was removed by the
+// Abolition of Mandatory Death Penalty Act 2023) with s7(2) (the
+// PRESUMPTION: proved unlawful possession of MORE THAN TWO firearms is
+// presumed trafficking — framing must flag the burden shift), s8 (unlawful
+// possession simpliciter: ≤14 years AND whipping not less than six strokes —
+// this rides on top of AA 1960 s8's ≤7 years; prosecution chooses the
+// charge), s9 (consorting — being in the company of someone in unlawful
+// possession, knowing it: ≤14 years + whipping, with a reverse-onus
+// escape — "unless he proves he had reasonable grounds for believing"
+// otherwise).
+// ALSO NOTED, not chunked: s12 (NO BAIL for any FIPA charge) — brutal and
+// citizen-relevant as a consequence, but procedural; add if a "charged under
+// FIPA" card lands.
+// AUTHORITY: PDRM. state:ALL — s1(2): "This Act shall apply throughout
+// Malaysia."
+// EN text pdftotext-extracted from the official AGC "online version of
+// updated text of reprint — As at 4 July 2023" (corpus/raw/act037/en.pdf)
+// → as_at 2023-07-04. Layout multi-space runs collapsed to single spaces;
+// words/punctuation/numbering untouched.
+// AMENDMENT NOTE for the keeper (2023 text vs 2006 reprint): (1) s7(1)
+// rewritten — "death; or imprisonment for life and with whipping..." is now
+// "imprisonment for a term of not less than thirty years but not exceeding
+// forty years and with whipping with not less than six strokes"; (2) the
+// s2(1) definition of "imprisonment for life" is GONE from the 2023 text
+// (silently — no "(Deleted...)" marker), consistent with life terms leaving
+// the Act; (3) s10(1) still reads "except the penalty of death" — leftover
+// in the official updated text, not ours to fix.
+// s2's Arms Act cross-references (ss 9(1), 9(2), 11(1), 15(1) — dealer/
+// transfer/import provisions) are NOT in the corpus — logged as a known
+// ref gap, refs point only at chunks that exist. All chunks verified:false
+// until keeper word-for-word PDF check.
+{"id": "FIPA1971-s2-en-0", "authority": "PDRM", "statute": "Firearms (Increased Penalties) Act 1971", "statute_abbr": "FIPA 1971", "act_number": "37", "state": "ALL", "section": "2", "kind": "definition", "refs": [{"statute": "AA1960", "section": "3"}], "heading": "Interpretation", "lang": "en", "text": "2. (1) In this Act—\n“discharge” means to cause the discharge of a shot, bullet or other missile from a firearm by means of an explosive charge, and includes the causing of a bomb or grenade to explode;\n“firearm” means any lethal barrelled weapon of any description from which any shot, bullet or other missile can be discharged by means of an explosive charge, and includes a bomb or grenade containing an explosive charge;\n“scheduled offence” means any offence enumerated in the Schedule;\n“subordinate court” has the meaning assigned thereto in section 3 of the Courts of Judicature Act 1964 [Act 91];\n“traffic in firearms” means—\n(a) to sell or transfer, or keep or expose for sale or transfer, a firearm in contravention of subsection 9(1) of the Arms Act 1960 [Act 206];\n(b) to repair or accept for repair a firearm in contravention of subsection 9(2) of the Act;\n(c) to transfer, sell or offer for sale a firearm to a person other than a person specified in subsection 11(1) of the Act; or\n(d) to import a firearm in contravention of subsection 15(1) of the Act;\n(e) (Deleted by Act A266).\n“unlawful possession of a firearm” means possession, custody or control of a firearm, or the carrying thereof, in contravention of the Arms Act 1960.\n(2) Words and expressions used in this Act which occur in the Penal Code [Act 574] have the meanings respectively assigned to them in that Code.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=37", "as_at": "2023-07-04", "verified": true}
+{"id": "FIPA1971-s7-en-0", "authority": "PDRM", "statute": "Firearms (Increased Penalties) Act 1971", "statute_abbr": "FIPA 1971", "act_number": "37", "state": "ALL", "section": "7", "subsection": "7(1)", "kind": "penalty", "refs": [{"statute": "FIPA1971", "section": "2"}], "heading": "Penalty for trafficking in firearms", "lang": "en", "text": "7. (1) Any person trafficking in firearms shall be punished with imprisonment for a term of not less than thirty years but not exceeding forty years and with whipping with not less than six strokes.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=37", "as_at": "2023-07-04", "verified": true}
+{"id": "FIPA1971-s7-en-1", "authority": "PDRM", "statute": "Firearms (Increased Penalties) Act 1971", "statute_abbr": "FIPA 1971", "act_number": "37", "state": "ALL", "section": "7", "subsection": "7(2)", "kind": "presumption", "refs": [{"statute": "FIPA1971", "section": "2"}, {"statute": "FIPA1971", "section": "8"}], "heading": "Penalty for trafficking in firearms", "lang": "en", "text": "(2) Any person proved to be in unlawful possession of more than two firearms shall be presumed to be trafficking in firearms.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=37", "as_at": "2023-07-04", "verified": true}
+{"id": "FIPA1971-s8-en-0", "authority": "PDRM", "statute": "Firearms (Increased Penalties) Act 1971", "statute_abbr": "FIPA 1971", "act_number": "37", "state": "ALL", "section": "8", "kind": "penalty", "refs": [{"statute": "FIPA1971", "section": "2"}, {"statute": "AA1960", "section": "3"}, {"statute": "AA1960", "section": "8"}], "heading": "Penalty for unlawful possession of firearms", "lang": "en", "text": "8. Any person who is in unlawful possession of a firearm shall be punished with imprisonment for a term which may extend to fourteen years and with whipping with not less than six strokes.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=37", "as_at": "2023-07-04", "verified": true}
+{"id": "FIPA1971-s9-en-0", "authority": "PDRM", "statute": "Firearms (Increased Penalties) Act 1971", "statute_abbr": "FIPA 1971", "act_number": "37", "state": "ALL", "section": "9", "kind": "offence", "refs": [{"statute": "FIPA1971", "section": "2"}, {"statute": "FIPA1971", "section": "8"}], "heading": "Penalty for consorting with persons carrying arms", "lang": "en", "text": "9. Any person who consorts with, or is found in the company of, another person who is in unlawful possession of a firearm in circumstances which raise a reasonable presumption that he knew that such other person was in unlawful possession of the firearm shall, unless he proves that he had reasonable grounds for believing that such other person was not in unlawful possession of the firearm, be punished with imprisonment for a term which may extend to fourteen years and with whipping with not less than six strokes.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=37", "as_at": "2023-07-04", "verified": true}

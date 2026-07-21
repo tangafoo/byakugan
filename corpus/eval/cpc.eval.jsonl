@@ -1,0 +1,13 @@
+// Phone-and-person search cluster — CPC (Act 593) + Police Act 1967 (PA1967).
+// Flagship: "can a police officer go through my phone?" The honest core:
+// CPC s116B is an EXPRESS computerized-data access power (incl. passwords) —
+// but only for Inspector+ AND only riding on a lawful search under the Code
+// (s20 arrest search, s116/s116A, warrant). The roadblock itself (PA s24/s26)
+// grounds licence production + vehicle search, not phone contents.
+// cpc-03 is an arrest-quadruple tripwire: the CPC general power must not be
+// crowded out by the DDA/MOA arrest lookalikes.
+{"id": "cpc-01", "question": "can a police officer go through my phone?", "lang": "en", "expect": [{"statute": "CPC", "section": "116B"}, {"statute": "CPC", "section": "20"}], "should_find": true}
+{"id": "cpc-02", "question": "i got arrested, can they take my things and search my body", "lang": "en", "expect": [{"statute": "CPC", "section": "20"}, {"statute": "CPC", "section": "20A"}], "should_find": true}
+{"id": "cpc-03", "question": "police say they don't need a warrant to arrest me, is that true", "lang": "en", "expect": [{"statute": "CPC", "section": "23"}], "forbid": [{"statute": "DDA1952", "section": "31"}, {"statute": "MOA1955", "section": "31"}], "should_find": true}
+{"id": "cpc-04", "question": "officer demands my phone password at a roadblock, do i have to give it", "lang": "en", "expect": [{"statute": "CPC", "section": "116B"}, {"statute": "PA1967", "section": "26"}], "should_find": true}
+{"id": "pa-01", "question": "police stopped my car at a roadblock and want to search it without a warrant", "lang": "en", "expect": [{"statute": "PA1967", "section": "24"}, {"statute": "PA1967", "section": "26"}], "should_find": true}

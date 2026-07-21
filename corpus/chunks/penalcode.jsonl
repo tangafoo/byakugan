@@ -1,0 +1,90 @@
+// Penal Code [Act 574] — three targeted clusters.
+// CLUSTER A: the negligence ladder, chosen for the negligent-discharge
+// scenario ("shot at a squirrel on my own land, the bullet came
+// down on a pedestrian"). These four sections ARE the answer to "what
+// trouble am I in" once someone is actually hit:
+// s336 (the rash/negligent act itself, nobody hurt: ≤3 months / ≤RM500),
+// s337 (the act causes HURT: ≤6 months / ≤RM1,000),
+// s338 (the act causes GRIEVOUS HURT: ≤2 years / ≤RM2,000),
+// s304A (the act causes DEATH, not amounting to culpable homicide:
+// ≤2 years / fine / both).
+// Same act, escalating only by outcome — the framing should show the ladder.
+// The Arms Act 1960 s37 (causing injury with an arm without lawful excuse)
+// covers the same facts from the firearms side; AA1960 chunks carry the
+// cross-refs. No refs between the PC sections themselves: none of the four
+// texts cross-references another section (the "hurt"/"grievous hurt"
+// definitions live in s319/s320, uncited in these texts and not yet chunked
+// — logged as a definition gap).
+// VERBATIM NOTE for the keeper: s304A in the official As-at-31-May-2023 PDF
+// still reads "any rash or negligence act" — [sic], confirmed against both
+// the 2018 and 2023 PDFs, not a pdftotext artifact. Do not "fix" it.
+// REJECTED: s286 (negligent conduct with respect to any explosive substance)
+// — aimed at explosive substances as such (blasting, fireworks, kept
+// explosives); a firearm shot is squarely s336-s338/s304A ground plus
+// AA1960 s37, and citing s286 for a gunshot would be a mis-grounding risk.
+// s280-s289 remaining negligence sections (poison, fire, machinery,
+// buildings, animals) — out of this cluster's scope.
+// AUTHORITY: PDRM. state:ALL — federal.
+// EN text pdftotext-extracted from the official AGC "online version of
+// updated text of reprint — As at 31 May 2023" (corpus/raw/act574/en.pdf;
+// the superseded 2018 text is kept at en.2018.*). Re-derived against the
+// 2023 text: all four sections word-for-word unchanged from the 2018 text;
+// section numbers and headings unchanged.
+// Layout multi-space runs collapsed to single spaces; words/punctuation/
+// numbering untouched. All chunks verified:false until keeper word-for-word
+// PDF check.
+// CLUSTER B: street fights ("I got into / witnessed a fight — drunk or
+// gang-related — what am I exposed to?"):
+// s159 (affray DEFINED: two or more persons fighting in a public place,
+// disturbing the public peace — being IN the fight is itself the offence
+// ground, no need to have started it) + s160 (punishment: ≤6 months /
+// ≤RM1,000), s321 (voluntarily causing hurt DEFINED — intention or
+// knowledge, the line that separates this cluster from the negligence
+// ladder of cluster A) + s323 (punishment: ≤1 year / ≤RM2,000), s322
+// (voluntarily causing grievous hurt DEFINED, with its Explanation +
+// Illustration) + s325 (punishment: ≤7 years + fine), s351 (assault
+// DEFINED — gesture/preparation causing apprehension; "mere words do not
+// amount to an assault"; Explanations + Illustrations included verbatim:
+// they are enacted Code text, not editorial furniture) + s352 (punishment
+// for assault/criminal force absent grave and sudden provocation:
+// ≤3 months / ≤RM1,000, with its Explanation on provocation).
+// Definition->punishment pairs are separate chunks with refs linking them.
+// CLUSTER C: animal cruelty / poisoning strays ("someone is poisoning the
+// neighbourhood cats"): s428 (mischief by killing, POISONING, maiming or
+// rendering useless ANY animal: ≤3 years / fine / both).
+// AMENDMENT NOTE for the keeper: s429 (the old higher-value-animal tier)
+// reads "(Deleted by Act A1471)" in the As-at-31-May-2023 text — s428 as
+// amended covers "any animal or animals" at the heavier ≤3-year tier.
+// Do NOT cite s429; it no longer exists.
+// KNOWN GAPS (logged, deliberately not chunked — corpus stays lean):
+// s141-s148 unlawful assembly / rioting cluster (the gang-fight question
+// beyond the affray itself); s334/s335 (hurt/grievous hurt on grave and
+// sudden provocation — textually cited by s323/s325); s350 (criminal force
+// definition — leaned on by s352); s324/s326 (hurt/grievous hurt by
+// dangerous weapons — the knife/weapon escalation); s319/s320 hurt
+// definitions (already logged under cluster A).
+// ANIMAL WELFARE ACT 2015 [Act 772] BLOCKER: chunking was requested but
+// SKIPPED — AWA enforcement is by "animal welfare officers", defined in s2
+// as public officers appointed under s36(1) by the Minister "charged with
+// the responsibility for the agriculture and agro-based industry" (i.e.
+// DVS); the word "police" appears NOWHERE in the Act, so no value in the
+// closed authority set (PDRM/JPJ/PBT/DBKL/RELIGIOUS) fits without
+// mis-tagging. PC s428 (PDRM) carries the poisoning scenario until the
+// schema grows an authority value for DVS/animal-welfare officers. AWA is
+// also Peninsular Malaysia + FT Labuan only (s1(2)) — the State enum cannot
+// express that combination either. Both flagged for the schema owner.
+// MORE PC SECTIONS WILL JOIN LATER (planned: s292/s294 obscenity, s425-s427
+// mischief); this file is the Penal Code's single home — one act, one file.
+{"id": "PC-s304A-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "304A", "kind": "offence", "heading": "Causing death by negligence", "lang": "en", "text": "304A. Whoever causes the death of any person, by doing any rash or negligence act not amounting to culpable homicide, shall be punished with imprisonment for a term which may extend to two years or with fine or with both.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s336-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "336", "kind": "offence", "heading": "Punishment for act which endangers life or the personal safety of others", "lang": "en", "text": "336. Whoever does any act so rashly or negligently as to endanger human life or the personal safety of others, shall be punished with imprisonment for a term which may extend to three months or with fine which may extend to five hundred ringgit or with both.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s337-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "337", "kind": "offence", "heading": "Causing hurt by an act which endangers life or the personal safety of others", "lang": "en", "text": "337. Whoever causes hurt to any person by doing any act so rashly or negligently as to endanger human life or the personal safety of others, shall be punished with imprisonment for a term which may extend to six months or with fine which may extend to one thousand ringgit or with both.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s338-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "338", "kind": "offence", "heading": "Causing grievous hurt by an act which endangers life or the personal safety of others", "lang": "en", "text": "338. Whoever causes grievous hurt to any person by doing any act so rashly or negligently as to endanger human life or the personal safety of others, shall be punished with imprisonment for a term which may extend to two years or with fine which may extend to two thousand ringgit or with both.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s159-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "159", "kind": "definition", "refs": [{"statute": "PC", "section": "160"}], "heading": "Affray", "lang": "en", "text": "159. When two or more persons, by fighting, in a public place, disturb the public peace, they are said to “commit an affray”.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s160-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "160", "kind": "offence", "refs": [{"statute": "PC", "section": "159"}], "heading": "Punishment for committing affray", "lang": "en", "text": "160. Whoever commits an affray shall be punished with imprisonment for a term which may extend to six months, or with fine which may extend to one thousand ringgit or with both.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s321-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "321", "kind": "definition", "refs": [{"statute": "PC", "section": "323"}], "heading": "Voluntarily causing hurt", "lang": "en", "text": "321. Whoever does any act with the intention of thereby causing hurt to any person, or with the knowledge that he is likely thereby to cause hurt to any person, and does thereby cause hurt to any person, is said “voluntarily to cause hurt”.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s322-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "322", "kind": "definition", "refs": [{"statute": "PC", "section": "325"}], "heading": "Voluntarily causing grievous hurt", "lang": "en", "text": "322. Whoever voluntarily causes hurt, if the hurt which he intends to cause or knows himself to be likely to cause is grievous hurt, and if the hurt which he causes is grievous hurt, is said “voluntarily to cause grievous hurt”.\nExplanation—A person is not said voluntarily to cause grievous hurt except when he both causes grievous hurt and intends or knows himself to be likely to cause grievous hurt. But he is said voluntarily to cause grievous hurt if, intending or knowing himself to be likely to cause grievous hurt of one kind, he actually causes grievous hurt of another kind.\nILLUSTRATION\nA, intending or knowing himself to be likely permanently to disfigure Z’s face, gives Z a blow which does not permanently disfigure Z’s face, but which causes Z to suffer severe bodily pain for the space of ten days. A has voluntarily caused grievous hurt.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s323-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "323", "kind": "offence", "refs": [{"statute": "PC", "section": "321"}], "heading": "Punishment for voluntarily causing hurt", "lang": "en", "text": "323. Whoever, except in the case provided for by section 334, voluntarily causes hurt, shall be punished with imprisonment for a term which may extend to one year or with fine which may extend to two thousand ringgit or with both.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s325-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "325", "kind": "offence", "refs": [{"statute": "PC", "section": "322"}], "heading": "Punishment for voluntarily causing grievous hurt", "lang": "en", "text": "325. Whoever, except in the case provided by section 335, voluntarily causes grievous hurt, shall be punished with imprisonment for a term which may extend to seven years, and shall also be liable to fine.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s351-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "351", "kind": "definition", "refs": [{"statute": "PC", "section": "352"}], "heading": "Assault", "lang": "en", "text": "351. Whoever makes any gesture or any preparation, intending or knowing it to be likely that such gesture or preparation will cause any person present to apprehend that he who makes that gesture or preparation is about to use criminal force to that person, is said to commit an assault.\nExplanation—Mere words do not amount to an assault. But the words which a person uses may give to his gestures or preparation such a meaning as may make those gestures or preparations amount to an assault.\nILLUSTRATIONS\n(a) A shakes his fist at Z, intending or knowing it to be likely that he may thereby cause Z to believe that A is about to strike Z. A has committed an assault.\n(b) A begins to unloose the muzzle of a ferocious dog, intending or knowing it to be likely that he may thereby cause Z to believe that he is about to cause the dog to attack Z. A has committed an assault upon Z.\n(c) A takes up a stick, saying to Z, “I will give you a beating”. Here, though the words used by A could in no case amount to an assault, and though the mere gesture, unaccompanied by any other circumstances might not amount to an assault, the gesture explained by the words may amount to an assault.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s352-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "352", "kind": "offence", "refs": [{"statute": "PC", "section": "351"}], "heading": "Punishment for using criminal force otherwise than on grave provocation", "lang": "en", "text": "352. Whoever assaults or uses criminal force to any person otherwise than on grave and sudden provocation given by that person, shall be punished with imprisonment for a term which may extend to three months or with fine which may extend to one thousand ringgit or with both.\nExplanation—Grave and sudden provocation will not mitigate the punishment for an offence under this section, if the provocation is sought or voluntarily provoked by the offender as an excuse for the offence;\nif the provocation is given by anything done in obedience to the law or by a public servant in the lawful exercise of the powers of such public servant; or\nif the provocation is given by anything done in the lawful exercise of the right of private defence.\nWhether the provocation was grave and sudden enough to mitigate the offence, is a question of fact.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}
+{"id": "PC-s428-en-0", "authority": "PDRM", "statute": "Penal Code", "statute_abbr": "Penal Code", "statute_code": "PC", "act_number": "574", "state": "ALL", "section": "428", "kind": "offence", "heading": "Mischief by killing or maiming any animal", "lang": "en", "text": "428. Whoever commits mischief by killing, poisoning, maiming, or rendering useless, any animal or animals, shall be punished with imprisonment for a term which may extend to three years or with fine or with both.", "source_url": "https://lom.agc.gov.my/act-detail.php?language=BI&act=574", "as_at": "2023-05-31", "verified": true}

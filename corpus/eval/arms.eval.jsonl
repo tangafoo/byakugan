@@ -1,0 +1,13 @@
+// Firearms cluster — Arms Act 1960 (AA1960) + Firearms (Increased Penalties)
+// Act 1971 (FIPA1971) + Penal Code negligence ladder (PC s304A/336/337/338).
+// Flagship: the squirrel scenario — lawful gun owner, own property, falling
+// bullet hits a pedestrian. The legal core: AA s39 (discharge only lawful at a
+// range / defence of life or property / wildlife authorization — own land is
+// NOT a ground), AA s37 (discharge injuring someone), PC s337/338/304A by
+// outcome severity. arms-05 is a discrimination tripwire: consorting (FIPA s9)
+// must not surface the possessor's own AA s8 penalty.
+{"id": "arms-01", "question": "if i am shooting a squirrel on a tree on MY property and bullets that shoot upward and fall hit a pedestrian, what trouble am I in?", "lang": "en", "expect": [{"statute": "AA1960", "section": "37"}, {"statute": "AA1960", "section": "39"}, {"statute": "PC", "section": "338"}], "should_find": true}
+{"id": "arms-02", "question": "do i need a licence to keep a gun at home in malaysia and what happens if i dont have one", "lang": "en", "expect": [{"statute": "AA1960", "section": "3"}, {"statute": "AA1960", "section": "8"}], "should_find": true}
+{"id": "arms-03", "question": "someone fired a gun and a bystander died, it was an accident not murder, what is the charge", "lang": "en", "expect": [{"statute": "PC", "section": "304A"}, {"statute": "AA1960", "section": "37"}], "should_find": true}
+{"id": "arms-04", "question": "can i legally fire my licensed shotgun on my own farm land or only at a shooting range", "lang": "en", "expect": [{"statute": "AA1960", "section": "39"}], "should_find": true}
+{"id": "arms-05", "question": "my friend keeps an unlicensed pistol and i hang out at his place, can i get charged too", "lang": "en", "expect": [{"statute": "FIPA1971", "section": "9"}], "forbid": [{"statute": "AA1960", "section": "8"}], "should_find": true}
