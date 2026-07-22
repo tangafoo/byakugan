@@ -313,20 +313,24 @@ func (s *Store) Search(ctx context.Context, queryVec []float32, k int, l corpus.
 		hits = append(hits, h)
 	}
 
-	if maxDist <= 0 {
-		return hits, rows.Err()
+	return filterByDistance(hits, maxDist), rows.Err()
+}
+
+// filterByDistance drops hits whose distance exceeds max — the grounding
+// floor. max <= 0 means the filter is off. A hit exactly at the threshold is
+// kept ("drop hits ABOVE this distance").
+func filterByDistance(hits []Hit, max float64) []Hit {
+	if max <= 0 {
+		return hits
 	}
 
-	// Max distance filtering
 	kept := hits[:0]
-
 	for _, hit := range hits {
-		if hit.Distance <= maxDist {
+		if hit.Distance <= max {
 			kept = append(kept, hit)
 		}
 	}
-	return kept, rows.Err()
-
+	return kept
 }
 
 // fetchSectionsSQL resolves a batch of (statute_code, section) pairs in one

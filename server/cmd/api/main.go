@@ -220,24 +220,18 @@ func (s *byakuganServer) handleAsk(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(res)
 }
 
-// expandRefs collects the cross-references of the retrieved hits and fetches
-// their chunks, capped at refsK rows. Dedupe rules: skip refs pointing at a
-// section already retrieved, and drop fetched rows whose ID is already among
-// the hits (a subsection slice of the same section can be both). Any error is
-// logged and swallowed — expansion is a bonus, never a dependency.
-func (s *byakuganServer) expandRefs(ctx context.Context, hits []store.Hit, lang corpus.Lang) []store.Hit {
+// collectRefs walks the hits in rank order and gathers their cross-references,
+// kept DB-free so it's testable.
+func collectRefs(hits []store.Hit, max int) []corpus.RelatedSection {
 	present := make(map[corpus.RelatedSection]bool, len(hits))
-	presentIDs := make(map[string]bool, len(hits))
-
 	for _, h := range hits {
 		present[corpus.RelatedSection{Statute: h.StatuteCode, Section: h.Section}] = true
-		presentIDs[h.ID] = true
 	}
 
 	var refs []corpus.RelatedSection
 	collected := make(map[corpus.RelatedSection]bool)
 
-	for _, h := range hits { // hits arrive in rerank order — best hit's refs first\
+	for _, h := range hits { // hits arrive in rerank order — best hit's refs first
 		for _, r := range h.Refs {
 			if present[r] || collected[r] {
 				continue
@@ -246,15 +240,26 @@ func (s *byakuganServer) expandRefs(ctx context.Context, hits []store.Hit, lang 
 
 			refs = append(refs, r)
 			// To account for limit reached in indices not the last
-			if len(refs) == refsK {
-				break
+			if len(refs) == max {
+				return refs
 			}
 		}
-		if len(refs) == refsK {
-			break
-		}
+	}
+	return refs
+}
+
+// expandRefs collects the cross-references of the retrieved hits and fetches
+// their chunks, capped at refsK rows (const above). Dedupe rules: skip refs pointing at a
+// section already retrieved, and drop fetched rows whose ID is already among
+// the hits (a subsection slice of the same section can be both).
+func (s *byakuganServer) expandRefs(ctx context.Context, hits []store.Hit, lang corpus.Lang) []store.Hit {
+	presentIDs := make(map[string]bool, len(hits))
+
+	for _, h := range hits {
+		presentIDs[h.ID] = true
 	}
 
+	refs := collectRefs(hits, refsK)
 	if len(refs) == 0 {
 		return nil
 	}
